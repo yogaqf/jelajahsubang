@@ -20,7 +20,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white shadow-sm">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-4">
         <div className="flex items-center gap-2">
-          <Image src="/images/logo.png" alt="Jelajah Subang" width={40} height={40} />
+          <Image src="/images/logo.PNG" alt="Jelajah Subang" width={40} height={40} />
           <Link href="/" className="text-base font-semibold tracking-tight text-zinc-900">
             Jelajah Subang
           </Link>
