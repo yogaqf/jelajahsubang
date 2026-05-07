@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export function Hero() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+    <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-20">
       <section className="grid items-center gap-10 lg:grid-cols-2">
         <div>
           <p className="inline-flex rounded-full border border-zinc-200 px-3 py-1 text-sm font-medium text-zinc-700">
@@ -26,7 +26,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-100 to-zinc-200 p-8 sm:p-10">
+        <div className="rounded-2xl border border-zinc-200 bg-linear-to-br from-zinc-100 to-zinc-200 p-8 sm:p-10">
           <div className="rounded-xl border border-zinc-300 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-black">Kenapa Jelajah Subang?</h2>
             <ul className="mt-4 space-y-3 text-zinc-700">
