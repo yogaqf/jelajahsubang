@@ -37,7 +37,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${isTransparent
+      className={`sticky top-0 z-50 w-full ${isTransparent
         ? "border-transparent bg-transparent"
         : "border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur"
         }`}

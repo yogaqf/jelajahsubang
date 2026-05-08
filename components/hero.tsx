@@ -6,7 +6,7 @@ export function Hero() {
     <main className="relative z-0 -mt-16 overflow-hidden pt-16">
       <div className="absolute inset-0 -z-10">
         <Image
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80"
+          src="/images/hero.jpg"
           alt="Pemandangan alam Subang"
           fill
           sizes="100vw"
