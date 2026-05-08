@@ -36,6 +36,26 @@ function parsePostFromFile(file: string): BlogPostDetail {
   };
 }
 
+export function getLatestBlogPosts(limit: number = 3): BlogPost[] {
+  if (!fs.existsSync(BLOG_DIR)) return [];
+  return fs
+    .readdirSync(BLOG_DIR)
+    .filter((file) => file.endsWith(".mdx"))
+    .map((file) => parsePostFromFile(file))
+    .filter((post) => post.published)
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, limit)
+    .map((post) => ({
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      date: post.date,
+      author: post.author,
+      tags: post.tags,
+      published: post.published,
+    }));
+}
+
 export function getAllBlogPosts(): BlogPost[] {
   if (!fs.existsSync(BLOG_DIR)) return [];
 

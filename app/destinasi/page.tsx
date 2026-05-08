@@ -8,7 +8,6 @@ export default function DestinasiPage() {
   return (
     <div className="min-h-screen bg-zinc-50">
       <Navbar />
-
       <main className="mx-auto w-full max-w-7xl px-3 py-12 sm:px-4">
         <header>
           <h1 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">Destinasi per Kecamatan</h1>
