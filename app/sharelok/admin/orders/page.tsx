@@ -10,15 +10,16 @@ import {
   User,
   Phone,
   MapPin,
-  MessageCircle,
   Store,
   Trash2,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
 interface Order {
   id: string;
   orderNumber: string;
+  trackingToken: string;
   areaId: string | null;
   area?: { id: string; name: string } | null;
   promoCode: string | null;
@@ -222,6 +223,10 @@ function openWhatsApp(phone: string | undefined, message: string) {
   window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
+function trackingUrl(order: Pick<Order, "trackingToken">) {
+  return `${window.location.origin}/sharelok/pesanan/${order.trackingToken}`;
+}
+
 function WhatsAppIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -364,29 +369,17 @@ export default function AdminOrdersPage() {
     }
   }
 
+  function handleShareTracking(order: Order) {
+    openWhatsApp(
+      order.customerPhone,
+      `Halo Kak ${order.customerName} 👋\n\nPantau riwayat dan status pesanan *${order.orderNumber}* melalui link berikut:\n${trackingUrl(order)}\n\nLink ini khusus untuk pesanan Kakak. Mohon tidak dibagikan ke orang lain ya 🙏`
+    );
+  }
+
   function orderSummary(order: Order) {
     return (order.items || [])
       .map((item) => `• ${item.productName} x${item.quantity}`)
       .join("\n");
-  }
-
-  async function handleNotifyCustomer(order: Order) {
-    const meta = statusMeta[order.status] || { label: order.status, description: "Status pesanan diperbarui." };
-    const closing = order.status === "COMPLETED"
-      ? "Pesanan sudah sampai. Selamat menikmati dan terima kasih sudah order di Sharelok 💚"
-      : order.status === "CANCELLED"
-        ? "Maaf pesanan belum dapat dilanjutkan. Hubungi kami jika butuh bantuan ya."
-        : "Kami kabari lagi jika ada perkembangan ya.";
-    openWhatsApp(
-      order.customerPhone,
-      `Halo Kak ${order.customerName} 👋\nUpdate *${order.orderNumber}*\n\n📦 *${meta.label}*\n${meta.description}\n\nTotal: *${fmt(order.total)}*\n\n${closing}`
-    );
-    await fetch(`/api/sharelok/orders/${order.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ historyNote: `Update status ${meta.label} dikirim ke customer melalui WhatsApp` }),
-    });
-    await loadData();
   }
 
   async function handleSavePricing(order: Order) {
@@ -426,7 +419,7 @@ export default function AdminOrdersPage() {
     const total = order.subtotal + deliveryFee - order.discount;
     openWhatsApp(
       order.customerPhone,
-      `Halo Kak ${order.customerName} 👋\nMenu pesanan *${order.orderNumber}* tersedia!\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nBalas *SETUJU* untuk konfirmasi menu dan ongkir, lalu lanjut pembayaran ${pricingForm.paymentMethod === "COD" ? "COD" : "melalui QRIS"} ya 🙏`
+      `Halo Kak ${order.customerName} 👋\nMenu pesanan *${order.orderNumber}* tersedia!\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nBalas *SETUJU* untuk konfirmasi menu dan ongkir, lalu lanjut pembayaran ${pricingForm.paymentMethod === "COD" ? "COD" : "melalui QRIS"} ya 🙏\n\nPantau pesanan:\n${trackingUrl(order)}`
     );
     await handleSavePricing(order);
     if (order.status === "WAITING_CONFIRMATION" || order.status === "PENDING") {
@@ -563,7 +556,7 @@ export default function AdminOrdersPage() {
       if (!driver?.isActive) throw new Error("Pilih driver aktif terlebih dahulu.");
       openWhatsApp(
         driver?.whatsapp || driver?.phone,
-        `Halo Kak ${driver?.name || "Driver"} 👋\nAda order antar *${assigningOrder.orderNumber}*\n\n📍 Ambil: ${assigningOrder.merchant?.name || "Mitra Sharelok"}\n🏠 Antar: ${assigningOrder.customerAddress}\n💰 Ongkir: ${fmt(assigningOrder.deliveryFee)}\n🛵 Komisi (${driver?.commissionPercent ?? 0}%): *${fmt(Math.floor(assigningOrder.deliveryFee * (driver?.commissionPercent ?? 0) / 100))}*\n\nBalas *SIAP* jika bisa ambil ya.`
+        `Halo Kak ${driver?.name || "Driver"} 👋\nAda order antar *${assigningOrder.orderNumber}*\n\n📍 Ambil: ${assigningOrder.merchant?.name || "Mitra Sharelok"}\n🏠 Antar: ${assigningOrder.customerAddress}\n🛵 Komisi antar: *${fmt(Math.floor(assigningOrder.deliveryFee * (driver?.commissionPercent ?? 0) / 100))}*\n\nBalas *SIAP* jika bisa ambil ya.`
       );
       const response = await fetch(`/api/sharelok/orders/${assigningOrder.id}`, {
         method: "PATCH",
@@ -758,12 +751,20 @@ export default function AdminOrdersPage() {
                 <div className="text-xs text-zinc-400">Rincian Lengkap Pesanan</div>
                 <h3 className="text-lg font-bold text-zinc-900">{selectedOrder.orderNumber}</h3>
               </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(trackingUrl(selectedOrder), "_blank")}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Halaman customer
+                </button>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             {actionError && (
@@ -995,8 +996,8 @@ export default function AdminOrdersPage() {
             {/* Status history is the single source for customer updates. */}
             <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-emerald-50 px-4 py-3">
-                <div><h4 className="text-xs font-black uppercase tracking-wider text-emerald-950">Riwayat & Update Customer</h4><p className="mt-0.5 text-[10px] text-emerald-700">Pesan WhatsApp memakai status terbaru dari riwayat ini.</p></div>
-                <button onClick={() => handleNotifyCustomer(selectedOrder)} disabled={isSubmitting} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50"><MessageCircle className="h-3.5 w-3.5" /> Kirim status terbaru via WA</button>
+                <div><h4 className="text-xs font-black uppercase tracking-wider text-emerald-950">Riwayat Status Pesanan</h4><p className="mt-0.5 text-[10px] text-emerald-700">Catatan perubahan status tersimpan otomatis dari alur pesanan.</p></div>
+                <button onClick={() => handleShareTracking(selectedOrder)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><WhatsAppIcon className="h-4 w-4" /> Bagikan link riwayat</button>
               </div>
               <div className="space-y-0 p-4 text-xs">
                 {selectedOrder.statusHistory?.length ? selectedOrder.statusHistory.map((history, index) => (

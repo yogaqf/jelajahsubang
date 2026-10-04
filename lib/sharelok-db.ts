@@ -166,6 +166,88 @@ export async function getOrderById(orderId: string) {
   };
 }
 
+const publicStatusCopy: Record<string, { label: string; description: string }> = {
+  WAITING_CONFIRMATION: { label: "Pesanan diterima", description: "Admin sedang mengecek ketersediaan menu dan ongkir." },
+  CONTACTED: { label: "Menunggu persetujuan", description: "Rincian menu dan ongkir sudah dikirim untuk dikonfirmasi." },
+  PENDING: { label: "Menunggu konfirmasi", description: "Pesanan sedang menunggu konfirmasi lanjutan." },
+  CONFIRMED: { label: "Pesanan dikonfirmasi", description: "Pesanan dan total pembayaran sudah disetujui." },
+  PREPARING: { label: "Sedang disiapkan", description: "Mitra sedang menyiapkan pesananmu." },
+  READY: { label: "Siap dijemput", description: "Pesanan sudah siap untuk diambil driver." },
+  DELIVERING: { label: "Sedang diantar", description: "Driver sedang mengantar pesanan ke alamatmu." },
+  COMPLETED: { label: "Pesanan selesai", description: "Pesanan telah diterima. Terima kasih sudah order di Sharelok." },
+  CANCELLED: { label: "Pesanan dibatalkan", description: "Pesanan tidak dapat dilanjutkan. Hubungi admin jika membutuhkan bantuan." },
+  EXPIRED: { label: "Pesanan kedaluwarsa", description: "Waktu konfirmasi pesanan telah berakhir." },
+};
+
+export async function getPublicOrderByTrackingToken(trackingToken: string) {
+  const databaseOrder = db && isDatabaseConfigured
+    ? await db.query.orders.findFirst({
+        where: eq(schema.orders.trackingToken, trackingToken),
+        with: {
+          area: true,
+          merchant: true,
+          driver: true,
+          items: true,
+          statusHistory: { orderBy: [desc(schema.orderStatusHistory.createdAt)] },
+        },
+      })
+    : null;
+  const memoryOrder = !isDatabaseConfigured
+    ? store.orders.find((item) => item.trackingToken === trackingToken)
+    : null;
+  const order = databaseOrder || (memoryOrder ? {
+    ...memoryOrder,
+    area: store.serviceAreas.find((item) => item.id === memoryOrder.areaId) || null,
+    merchant: store.merchants.find((item) => item.id === memoryOrder.merchantId) || null,
+    driver: store.drivers.find((item) => item.id === memoryOrder.driverId) || null,
+  } : null);
+
+  if (!order) return null;
+
+  const chronologicalHistory = [...order.statusHistory]
+    .reverse()
+    .filter((entry, index, entries) => index === 0 || entries[index - 1].status !== entry.status)
+    .map((entry) => ({
+      id: entry.id,
+      status: entry.status,
+      label: publicStatusCopy[entry.status]?.label || "Status diperbarui",
+      description: publicStatusCopy[entry.status]?.description || "Ada perkembangan baru pada pesananmu.",
+      createdAt: entry.createdAt,
+    }));
+
+  return {
+    orderNumber: order.orderNumber,
+    customerName: order.customerName.split(/\s+/)[0],
+    status: order.status,
+    statusLabel: publicStatusCopy[order.status]?.label || order.status,
+    statusDescription: publicStatusCopy[order.status]?.description || "Status pesanan diperbarui.",
+    subtotal: Number(order.subtotal),
+    deliveryFee: Number(order.deliveryFee),
+    discount: Number(order.discount),
+    total: Number(order.total),
+    promoCode: order.promoCode,
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    area: order.area ? { name: order.area.name } : null,
+    merchant: order.merchant ? { name: order.merchant.name } : null,
+    driver: order.driver ? {
+      name: order.driver.name,
+      vehicleType: order.driver.vehicleType,
+      vehiclePlate: order.driver.vehiclePlate,
+    } : null,
+    items: order.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      price: Number(item.price),
+      quantity: item.quantity,
+      subtotal: Number(item.subtotal),
+    })),
+    statusHistory: chronologicalHistory,
+  };
+}
+
 export async function deleteOrder(orderId: string, confirmation: string) {
   if (db && isDatabaseConfigured) {
     const [order] = await db
@@ -325,11 +407,13 @@ export async function createWebsiteOrder(input: WebsiteOrderInput) {
   const now = new Date();
   const orderId = crypto.randomUUID();
   const orderNumber = createOrderNumber();
+  const trackingToken = crypto.randomUUID().replaceAll("-", "");
   const merchantId = availableProducts[0].merchantId;
 
   const orderData = {
     id: orderId,
     orderNumber,
+    trackingToken,
     merchantId,
     areaId: merchantAreaId,
     customerName: input.customerName.trim(),
@@ -419,6 +503,7 @@ export async function createWebsiteOrder(input: WebsiteOrderInput) {
   return {
     id: orderId,
     orderNumber,
+    trackingToken,
     subtotal,
     total: Math.max(0, subtotal - discount),
     discount,
@@ -1325,8 +1410,10 @@ export async function getDailyClosingReport(date: string) {
         areaName: order.area?.name || "Area belum ditentukan",
         merchantId: order.merchantId,
         merchantName: order.merchant?.name || "Mitra tidak ditemukan",
+        merchantWhatsapp: order.merchant?.whatsapp || order.merchant?.phone || "",
         driverId: order.driverId,
         driverName: order.driver?.name || "Tanpa driver",
+        driverWhatsapp: order.driver?.whatsapp || order.driver?.phone || "",
         subtotal: Number(order.subtotal),
         deliveryFee: Number(order.deliveryFee),
         discount: Number(order.discount),
@@ -1335,12 +1422,19 @@ export async function getDailyClosingReport(date: string) {
         driverCommissionPercent: commissionPercent,
         driverCommission,
         platformRevenue,
+        items: order.items.map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          sales: Number(item.subtotal),
+        })),
       };
     });
 
-  const merchantMap = new Map<string, { merchantId: string; merchantName: string; orders: number; sales: number; payout: number }>();
-  const driverMap = new Map<string, { driverId: string; driverName: string; orders: number; deliveryFees: number; commission: number }>();
+  const merchantMap = new Map<string, { merchantId: string; merchantName: string; whatsapp: string; orders: number; sales: number; payout: number }>();
+  const driverMap = new Map<string, { driverId: string; driverName: string; whatsapp: string; orders: number; deliveryFees: number; commission: number }>();
   const areaMap = new Map<string, { areaId: string | null; areaName: string; orders: number; customerPayments: number; platformRevenue: number }>();
+  const menuMap = new Map<string, { productId: string | null; productName: string; merchantName: string; orderIds: Set<string>; quantity: number; sales: number }>();
   for (const closing of closings) {
     const areaKey = closing.areaId || "unassigned";
     const area = areaMap.get(areaKey) || {
@@ -1357,6 +1451,7 @@ export async function getDailyClosingReport(date: string) {
     const merchant = merchantMap.get(closing.merchantId) || {
       merchantId: closing.merchantId,
       merchantName: closing.merchantName,
+      whatsapp: closing.merchantWhatsapp,
       orders: 0,
       sales: 0,
       payout: 0,
@@ -1370,6 +1465,7 @@ export async function getDailyClosingReport(date: string) {
       const driver = driverMap.get(closing.driverId) || {
         driverId: closing.driverId,
         driverName: closing.driverName,
+        whatsapp: closing.driverWhatsapp,
         orders: 0,
         deliveryFees: 0,
         commission: 0,
@@ -1378,6 +1474,22 @@ export async function getDailyClosingReport(date: string) {
       driver.deliveryFees += closing.deliveryFee;
       driver.commission += closing.driverCommission;
       driverMap.set(closing.driverId, driver);
+    }
+
+    for (const item of closing.items) {
+      const menuKey = item.productId || `${closing.merchantId}:${item.productName}`;
+      const menu = menuMap.get(menuKey) || {
+        productId: item.productId,
+        productName: item.productName,
+        merchantName: closing.merchantName,
+        orderIds: new Set<string>(),
+        quantity: 0,
+        sales: 0,
+      };
+      menu.orderIds.add(closing.id);
+      menu.quantity += item.quantity;
+      menu.sales += item.sales;
+      menuMap.set(menuKey, menu);
     }
   }
 
@@ -1393,9 +1505,19 @@ export async function getDailyClosingReport(date: string) {
       }),
       { orders: 0, customerPayments: 0, merchantPayouts: 0, driverCommissions: 0, platformRevenue: 0 }
     ),
-    merchants: [...merchantMap.values()],
-    drivers: [...driverMap.values()],
-    areas: [...areaMap.values()],
+    merchants: [...merchantMap.values()].sort((a, b) => b.orders - a.orders || b.payout - a.payout),
+    drivers: [...driverMap.values()].sort((a, b) => b.orders - a.orders || b.commission - a.commission),
+    areas: [...areaMap.values()].sort((a, b) => b.orders - a.orders || b.customerPayments - a.customerPayments),
+    menus: [...menuMap.values()]
+      .map((menu) => ({
+        productId: menu.productId,
+        productName: menu.productName,
+        merchantName: menu.merchantName,
+        orders: menu.orderIds.size,
+        quantity: menu.quantity,
+        sales: menu.sales,
+      }))
+      .sort((a, b) => b.orders - a.orders || b.quantity - a.quantity || b.sales - a.sales),
     closings,
   };
 }

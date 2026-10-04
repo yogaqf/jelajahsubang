@@ -10,6 +10,7 @@ const WA_NUMBER = "628998744199";
 
 interface CreatedOrder {
   orderNumber: string;
+  trackingToken: string;
   subtotal: number;
   total: number;
   discount: number;
@@ -80,6 +81,7 @@ export function CartDrawer() {
       const message = [
         "Halo Sharelok 👋",
         `Saya mau konfirmasi pesanan *${data.orderNumber}*`,
+        `Pantau status: ${window.location.origin}/sharelok/pesanan/${data.trackingToken}`,
         "",
         `🏪 *${data.merchant?.name || items[0].merchantName}*`,
         `📌 Area ${items[0].areaName}`,

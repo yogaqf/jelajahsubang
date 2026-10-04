@@ -158,6 +158,7 @@ export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   areaId: uuid("area_id").references(() => serviceAreas.id, { onDelete: "set null" }),
   orderNumber: varchar("order_number", { length: 50 }).notNull().unique(),
+  trackingToken: varchar("tracking_token", { length: 64 }).notNull().unique(),
   merchantId: uuid("merchant_id")
     .notNull()
     .references(() => merchants.id),
