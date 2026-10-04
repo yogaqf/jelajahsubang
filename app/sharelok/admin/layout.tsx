@@ -15,11 +15,17 @@ import {
   X,
   Database,
   ArrowLeft,
+  ChartNoAxesCombined,
+  MapPinned,
+  BadgePercent,
 } from "lucide-react";
 
 const navLinks = [
   { href: "/sharelok/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/sharelok/admin/orders", label: "Pesanan (Orders)", icon: ShoppingBag },
+  { href: "/sharelok/admin/reports", label: "Laporan Closing", icon: ChartNoAxesCombined },
+  { href: "/sharelok/admin/areas", label: "Area Layanan", icon: MapPinned },
+  { href: "/sharelok/admin/promos", label: "Kode Promo", icon: BadgePercent },
   { href: "/sharelok/admin/categories", label: "Kategori", icon: Layers },
   { href: "/sharelok/admin/merchants", label: "Mitra Resto / Merchant", icon: Store },
   { href: "/sharelok/admin/products", label: "Produk Menu", icon: UtensilsCrossed },

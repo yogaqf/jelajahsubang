@@ -13,21 +13,26 @@ import {
   Phone,
   MessageCircle,
 } from "lucide-react";
-import { Driver } from "@/db/schema";
+import { Driver, ServiceArea } from "@/db/schema";
+
+type DriverWithArea = Driver & { area?: ServiceArea | null };
 
 export default function AdminDriversPage() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<DriverWithArea[]>([]);
+  const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    areaId: "",
     name: "",
     phone: "",
     whatsapp: "",
     vehicleType: "Honda Vario 160",
     vehiclePlate: "T 1234 XX",
+    commissionPercent: 80,
     notes: "",
     isActive: true,
   });
@@ -36,9 +41,10 @@ export default function AdminDriversPage() {
   async function loadDrivers() {
     setLoading(true);
     try {
-      const res = await fetch("/api/sharelok/drivers");
-      const data = await res.json();
+      const [res, areaRes] = await Promise.all([fetch("/api/sharelok/drivers"), fetch("/api/sharelok/areas")]);
+      const [data, areaData] = await Promise.all([res.json(), areaRes.json()]);
       setDrivers(Array.isArray(data) ? data : []);
+      setAreas(Array.isArray(areaData) ? areaData : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -53,25 +59,29 @@ export default function AdminDriversPage() {
   function handleOpenAdd() {
     setEditingId(null);
     setFormData({
+      areaId: areas.find((area) => area.isActive)?.id || areas[0]?.id || "",
       name: "",
       phone: "",
       whatsapp: "",
       vehicleType: "Honda Beat",
       vehiclePlate: "T ",
+      commissionPercent: 80,
       notes: "Standby area Subang Kota",
       isActive: true,
     });
     setIsModalOpen(true);
   }
 
-  function handleOpenEdit(d: Driver) {
+  function handleOpenEdit(d: DriverWithArea) {
     setEditingId(d.id);
     setFormData({
+      areaId: d.areaId || "",
       name: d.name,
       phone: d.phone,
       whatsapp: d.whatsapp || "",
       vehicleType: d.vehicleType || "",
       vehiclePlate: d.vehiclePlate || "",
+      commissionPercent: d.commissionPercent,
       notes: d.notes || "",
       isActive: d.isActive,
     });
@@ -114,7 +124,7 @@ export default function AdminDriversPage() {
     }
   }
 
-  async function handleToggleActive(d: Driver) {
+  async function handleToggleActive(d: DriverWithArea) {
     try {
       await fetch("/api/sharelok/drivers", {
         method: "PATCH",
@@ -165,6 +175,7 @@ export default function AdminDriversPage() {
                 <th className="px-4 py-3.5">Nama Kurir</th>
                 <th className="px-4 py-3.5">Kontak</th>
                 <th className="px-4 py-3.5">Kendaraan & Plat</th>
+                <th className="px-4 py-3.5">Komisi Ongkir</th>
                 <th className="px-4 py-3.5">Area / Catatan</th>
                 <th className="px-4 py-3.5">Status Siaga</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
@@ -173,7 +184,7 @@ export default function AdminDriversPage() {
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {drivers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
                     <Bike className="mx-auto mb-2 h-8 w-8 text-zinc-300" />
                     Belum ada data driver.
                   </td>
@@ -210,8 +221,12 @@ export default function AdminDriversPage() {
                       <div className="font-semibold text-zinc-800">{d.vehicleType || "Motor"}</div>
                       <div className="font-mono text-[11px] text-zinc-500">{d.vehiclePlate || "-"}</div>
                     </td>
+                    <td className="px-4 py-3.5">
+                      <div className="font-extrabold text-emerald-700">{d.commissionPercent}%</div>
+                      <div className="text-[10px] text-zinc-400">dari total ongkir</div>
+                    </td>
                     <td className="px-4 py-3.5 max-w-xs text-zinc-500">
-                      {d.notes || "-"}
+                      <div className="font-bold text-emerald-700">{d.area?.name || "Belum diatur"}</div><div className="mt-1 text-[10px]">{d.notes || "-"}</div>
                     </td>
                     <td className="px-4 py-3.5">
                       <button
@@ -272,6 +287,7 @@ export default function AdminDriversPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+              <div><label className="mb-1 block font-semibold text-zinc-700">Area operasional *</label><select required value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })} className="w-full rounded-xl border border-zinc-300 p-2.5"><option value="">Pilih area</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}{area.isActive ? "" : " (belum tersedia)"}</option>)}</select></div>
               <div>
                 <label className="block font-semibold text-zinc-700 mb-1">
                   Nama Lengkap Driver *
@@ -311,6 +327,27 @@ export default function AdminDriversPage() {
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                     className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <label className="block font-semibold text-emerald-900 mb-1">
+                  Persentase Komisi Ongkir Driver *
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    max={100}
+                    value={formData.commissionPercent}
+                    onChange={(e) => setFormData({ ...formData, commissionPercent: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                    className="w-28 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-bold text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                  />
+                  <span className="font-bold text-emerald-800">%</span>
+                  <span className="text-[11px] leading-relaxed text-emerald-800">
+                    Contoh: ongkir Rp10.000 × {formData.commissionPercent}% = {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(10000 * formData.commissionPercent / 100)} untuk driver.
+                  </span>
                 </div>
               </div>
 

@@ -14,16 +14,20 @@ import {
   MessageCircle,
   MapPin,
 } from "lucide-react";
-import { Merchant } from "@/db/schema";
+import { Merchant, ServiceArea } from "@/db/schema";
+
+type MerchantWithArea = Merchant & { area?: ServiceArea | null };
 
 export default function AdminMerchantsPage() {
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [merchants, setMerchants] = useState<MerchantWithArea[]>([]);
+  const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    areaId: "",
     name: "",
     slug: "",
     description: "",
@@ -41,9 +45,10 @@ export default function AdminMerchantsPage() {
   async function loadMerchants() {
     setLoading(true);
     try {
-      const res = await fetch("/api/sharelok/merchants");
-      const data = await res.json();
+      const [res, areaRes] = await Promise.all([fetch("/api/sharelok/merchants"), fetch("/api/sharelok/areas")]);
+      const [data, areaData] = await Promise.all([res.json(), areaRes.json()]);
       setMerchants(Array.isArray(data) ? data : []);
+      setAreas(Array.isArray(areaData) ? areaData : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -58,6 +63,7 @@ export default function AdminMerchantsPage() {
   function handleOpenAdd() {
     setEditingId(null);
     setFormData({
+      areaId: areas.find((area) => area.isActive)?.id || areas[0]?.id || "",
       name: "",
       slug: "",
       description: "",
@@ -73,9 +79,10 @@ export default function AdminMerchantsPage() {
     setIsModalOpen(true);
   }
 
-  function handleOpenEdit(m: Merchant) {
+  function handleOpenEdit(m: MerchantWithArea) {
     setEditingId(m.id);
     setFormData({
+      areaId: m.areaId || "",
       name: m.name,
       slug: m.slug,
       description: m.description || "",
@@ -127,7 +134,7 @@ export default function AdminMerchantsPage() {
     }
   }
 
-  async function handleToggleActive(m: Merchant) {
+  async function handleToggleActive(m: MerchantWithArea) {
     try {
       await fetch("/api/sharelok/merchants", {
         method: "PATCH",
@@ -178,6 +185,7 @@ export default function AdminMerchantsPage() {
                 <th className="px-4 py-3.5">Merchant</th>
                 <th className="px-4 py-3.5">Kontak</th>
                 <th className="px-4 py-3.5">Alamat Subang</th>
+                <th className="px-4 py-3.5">Area</th>
                 <th className="px-4 py-3.5">Koordinat</th>
                 <th className="px-4 py-3.5">Status</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
@@ -186,7 +194,7 @@ export default function AdminMerchantsPage() {
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {merchants.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
                     <Store className="mx-auto mb-2 h-8 w-8 text-zinc-300" />
                     Belum ada data merchant.
                   </td>
@@ -235,6 +243,7 @@ export default function AdminMerchantsPage() {
                         <span className="line-clamp-2">{m.address || "-"}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3.5"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{m.area?.name || "Belum diatur"}</span></td>
                     <td className="px-4 py-3.5 font-mono text-[11px] text-zinc-500">
                       {m.latitude && m.longitude ? `${m.latitude}, ${m.longitude}` : "-"}
                     </td>
@@ -297,6 +306,7 @@ export default function AdminMerchantsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+              <div><label className="mb-1 block font-semibold text-zinc-700">Area layanan *</label><select required value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })} className="w-full rounded-xl border border-zinc-300 p-2.5"><option value="">Pilih area</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}{area.isActive ? "" : " (belum tersedia)"}</option>)}</select></div>
               <div>
                 <label className="block font-semibold text-zinc-700 mb-1">
                   Nama Resto / Warung *

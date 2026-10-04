@@ -19,7 +19,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const created = await createDriver(body);
+    const created = await createDriver({
+      ...body,
+      commissionPercent: Math.min(100, Math.max(0, Math.floor(Number(body.commissionPercent ?? 80)))),
+    });
     return NextResponse.json(created, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed creating driver";
@@ -31,6 +34,9 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, ...data } = body;
+    if (data.commissionPercent !== undefined) {
+      data.commissionPercent = Math.min(100, Math.max(0, Math.floor(Number(data.commissionPercent))));
+    }
     const updated = await updateDriver(id, data);
     return NextResponse.json(updated);
   } catch (err: unknown) {

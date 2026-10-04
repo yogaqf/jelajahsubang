@@ -17,7 +17,13 @@ async function seed() {
   const sql = neon(url);
   const db = drizzle(sql, { schema });
 
-  console.log("📦 Mengisi data awal Sharelok (Categories, Merchants, Products, Drivers)...");
+  console.log("📦 Mengisi data awal Sharelok (Areas, Categories, Merchants, Products, Drivers)...");
+
+  const [ciaterArea] = await db.insert(schema.serviceAreas).values([
+    { name: "Ciater", slug: "ciater", description: "Cakupan layanan aktif wilayah Ciater", isActive: true, sortOrder: 1 },
+    { name: "Jalancagak", slug: "jalancagak", description: "Segera hadir di wilayah Jalancagak", isActive: false, sortOrder: 2 },
+    { name: "Kasomalang", slug: "kasomalang", description: "Segera hadir di wilayah Kasomalang", isActive: false, sortOrder: 3 },
+  ]).returning();
 
   // 1. Categories
   console.log("-> Seeding categories...");
@@ -66,6 +72,7 @@ async function seed() {
   console.log("-> Seeding merchants...");
   const merchantsData = [
     {
+      areaId: ciaterArea.id,
       name: "Warung Soto Ibu Neneng",
       slug: "soto-ibu-neneng",
       description: "Soto Subang asli legendaris dengan rempah pilihan sejak 1998",
@@ -79,6 +86,7 @@ async function seed() {
       sortOrder: 1,
     },
     {
+      areaId: ciaterArea.id,
       name: "Mie Kocok & Bakso Mang Ade",
       slug: "mie-kocok-mang-ade",
       description: "Mie kocok kuah kental kaldu sapi segar dengan kikil empuk",
@@ -92,6 +100,7 @@ async function seed() {
       sortOrder: 2,
     },
     {
+      areaId: ciaterArea.id,
       name: "Kedai Kopi & Cemilan Pagaden",
       slug: "kedai-pagaden",
       description: "Kopi robusta khas Subang dan aneka cireng isi gurih",
@@ -121,6 +130,7 @@ async function seed() {
       name: "Soto Subang Komplit",
       slug: "soto-subang-komplit",
       description: "Soto daging sapi empuk dengan kuah santan rempah khas Subang",
+      costPrice: 18000,
       price: 25000,
       imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -132,6 +142,7 @@ async function seed() {
       name: "Nasi Goreng Spesial",
       slug: "nasi-goreng-spesial",
       description: "Nasi goreng bumbu rahasia dengan telur ceplok dan kerupuk",
+      costPrice: 12000,
       price: 18000,
       imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -143,6 +154,7 @@ async function seed() {
       name: "Mie Kocok Spesial Kikil",
       slug: "mie-kocok-spesial-kikil",
       description: "Mie kuning lembut disiram kuah kaldu sapi pekat bertabur kikil gurih",
+      costPrice: 15000,
       price: 22000,
       imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -154,6 +166,7 @@ async function seed() {
       name: "Bakso Sapi Urat Super",
       slug: "bakso-sapi-urat-super",
       description: "Bakso urat jumbo dengan kuah gurih dan pangsit goreng",
+      costPrice: 14000,
       price: 20000,
       imageUrl: "https://images.unsplash.com/photo-1543353071-873f17a7a088?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -165,6 +178,7 @@ async function seed() {
       name: "Cireng Isi Sambal Rujak",
       slug: "cireng-isi-sambal-rujak",
       description: "Cireng renyah di luar kenyal di dalam dengan saus cocol rujak",
+      costPrice: 8000,
       price: 12000,
       imageUrl: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -176,6 +190,7 @@ async function seed() {
       name: "Kopi Susu Gula Aren Subang",
       slug: "kopi-susu-gula-aren-subang",
       description: "Kopi robusta Ciater dengan susu murni dan gula aren asli",
+      costPrice: 10000,
       price: 15000,
       imageUrl: "https://images.unsplash.com/photo-1517686469429-8a935e1c7b9c?auto=format&fit=crop&w=600&q=80",
       isAvailable: true,
@@ -191,20 +206,24 @@ async function seed() {
   console.log("-> Seeding drivers...");
   const driversData = [
     {
+      areaId: ciaterArea.id,
       name: "Kang Asep Kurniawan",
       phone: "081311223344",
       whatsapp: "6281311223344",
       vehicleType: "Honda Vario 160",
       vehiclePlate: "T 4521 WX",
+      commissionPercent: 80,
       isActive: true,
       notes: "Driver senior area Subang Kota & Ciater",
     },
     {
+      areaId: ciaterArea.id,
       name: "Mang Dedi Sukandar",
       phone: "085899887766",
       whatsapp: "6285899887766",
       vehicleType: "Yamaha NMAX",
       vehiclePlate: "T 2890 ZY",
+      commissionPercent: 80,
       isActive: true,
       notes: "Standby area Jalancagak & Pagaden",
     },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrders } from "@/lib/sharelok-db";
+import { createWebsiteOrder, getOrders } from "@/lib/sharelok-db";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,5 +12,16 @@ export async function GET(req: NextRequest) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed fetching orders";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const order = await createWebsiteOrder(body);
+    return NextResponse.json(order, { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Gagal membuat pesanan";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

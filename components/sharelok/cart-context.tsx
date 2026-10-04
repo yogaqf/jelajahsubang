@@ -3,9 +3,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
 export interface CartItem {
-  id: number;
+  id: string;
+  merchantId: string;
+  merchantName: string;
+  areaId: string | null;
+  areaName: string;
   name: string;
-  emoji: string;
+  imageUrl: string | null;
   price: number;
   qty: number;
 }
@@ -14,23 +18,37 @@ interface CartContextValue {
   items: CartItem[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  addItem: (item: Omit<CartItem, "qty">) => void;
-  removeItem: (id: number) => void;
-  updateQty: (id: number, qty: number) => void;
+  addItem: (item: Omit<CartItem, "qty">) => { ok: boolean; error?: string };
+  removeItem: (id: string) => void;
+  updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
+  syncWithProducts: (products: Omit<CartItem, "qty">[]) => void;
   totalItems: number;
   totalPrice: number;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const STORAGE_KEY = "sharelok-cart";
+// Increment the key when the cart payload or product catalogue identity changes.
+// This intentionally leaves the old demo cart behind instead of submitting its
+// non-database product IDs to PostgreSQL UUID columns.
+const STORAGE_KEY = "sharelok-cart-v3";
+const LEGACY_STORAGE_KEY = "sharelok-cart";
 
 function loadCart(): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is CartItem =>
+        typeof item?.id === "string" &&
+        typeof item?.merchantId === "string" &&
+        (typeof item?.areaId === "string" || item?.areaId === null) &&
+        typeof item?.areaName === "string" &&
+        typeof item?.qty === "number"
+    );
   } catch {
     return [];
   }
@@ -51,6 +69,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage on mount
   useEffect(() => {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
     setItems(loadCart());
     setHydrated(true);
   }, []);
@@ -63,6 +82,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   const addItem = useCallback((item: Omit<CartItem, "qty">) => {
+    if (items.length > 0 && items[0].merchantId !== item.merchantId) {
+      return {
+        ok: false,
+        error: "Selesaikan atau kosongkan keranjang dari mitra sebelumnya terlebih dahulu.",
+      };
+    }
+    if (items.length > 0 && items[0].areaId !== item.areaId) {
+      return { ok: false, error: "Keranjang berisi pesanan dari area layanan lain." };
+    }
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -70,13 +98,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, qty: 1 }];
     });
-  }, []);
+    return { ok: true };
+  }, [items]);
 
-  const removeItem = useCallback((id: number) => {
+  const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
-  const updateQty = useCallback((id: number, qty: number) => {
+  const updateQty = useCallback((id: string, qty: number) => {
     if (qty <= 0) {
       setItems((prev) => prev.filter((i) => i.id !== id));
     } else {
@@ -86,6 +115,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
+  }, []);
+
+  const syncWithProducts = useCallback((products: Omit<CartItem, "qty">[]) => {
+    const byId = new Map(products.map((product) => [product.id, product]));
+    setItems((prev) =>
+      prev.flatMap((item) => {
+        const product = byId.get(item.id);
+        if (!product || product.merchantId !== item.merchantId) return [];
+        return [{ ...product, qty: item.qty }];
+      })
+    );
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
@@ -101,6 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeItem,
         updateQty,
         clearCart,
+        syncWithProducts,
         totalItems,
         totalPrice,
       }}

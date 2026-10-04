@@ -24,6 +24,7 @@ interface Stats {
   completedOrders: number;
   activeDrivers: number;
   activeMerchants: number;
+  activeAreas: number;
   isLiveDb: boolean;
 }
 
@@ -89,7 +90,7 @@ export default function AdminDashboardPage() {
             Dashboard Sharelok
           </h2>
           <p className="mt-1 text-sm text-emerald-100">
-            Monitoring real-time aktivitas pemesanan, merchant, dan driver di Subang.
+            Monitoring pesanan, merchant, driver, dan {stats?.activeAreas || 0} area layanan aktif.
           </p>
         </div>
         <div className="flex items-center gap-2">

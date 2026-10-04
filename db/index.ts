@@ -30,9 +30,11 @@ export const db = dbInstance;
 
 export interface InMemoryStore {
   categories: schema.Category[];
+  serviceAreas: schema.ServiceArea[];
   merchants: schema.Merchant[];
   products: schema.Product[];
   drivers: schema.Driver[];
+  promoCodes: schema.PromoCode[];
   orders: (schema.Order & {
     items: schema.OrderItem[];
     statusHistory: schema.OrderStatusHistory[];
@@ -41,6 +43,13 @@ export interface InMemoryStore {
 }
 
 const now = new Date();
+const CIATER_AREA_ID = "a1111111-1111-4111-8111-111111111111";
+
+const initialServiceAreas: schema.ServiceArea[] = [
+  { id: CIATER_AREA_ID, name: "Ciater", slug: "ciater", description: "Cakupan layanan aktif area Ciater", isActive: true, sortOrder: 1, createdAt: now, updatedAt: now },
+  { id: "a2222222-2222-4222-8222-222222222222", name: "Jalancagak", slug: "jalancagak", description: "Cakupan layanan area Jalancagak", isActive: false, sortOrder: 2, createdAt: now, updatedAt: now },
+  { id: "a3333333-3333-4333-8333-333333333333", name: "Kasomalang", slug: "kasomalang", description: "Cakupan layanan area Kasomalang", isActive: false, sortOrder: 3, createdAt: now, updatedAt: now },
+];
 
 const initialCategories: schema.Category[] = [
   {
@@ -92,6 +101,7 @@ const initialCategories: schema.Category[] = [
 const initialMerchants: schema.Merchant[] = [
   {
     id: "m1111111-1111-1111-1111-111111111111",
+    areaId: CIATER_AREA_ID,
     name: "Warung Soto Ibu Neneng",
     slug: "soto-ibu-neneng",
     description: "Soto Subang asli legendaris dengan rempah pilihan sejak 1998",
@@ -108,6 +118,7 @@ const initialMerchants: schema.Merchant[] = [
   },
   {
     id: "m2222222-2222-2222-2222-222222222222",
+    areaId: CIATER_AREA_ID,
     name: "Mie Kocok & Bakso Mang Ade",
     slug: "mie-kocok-mang-ade",
     description: "Mie kocok kuah kental kaldu sapi segar dengan kikil empuk",
@@ -124,6 +135,7 @@ const initialMerchants: schema.Merchant[] = [
   },
   {
     id: "m3333333-3333-3333-3333-333333333333",
+    areaId: CIATER_AREA_ID,
     name: "Kedai Kopi & Cemilan Pagaden",
     slug: "kedai-pagaden",
     description: "Kopi robusta khas Subang dan aneka cireng isi gurih",
@@ -148,6 +160,7 @@ const initialProducts: schema.Product[] = [
     name: "Soto Subang Komplit",
     slug: "soto-subang-komplit",
     description: "Soto daging sapi empuk dengan kuah santan rempah khas Subang",
+    costPrice: 18000,
     price: 25000,
     imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -162,6 +175,7 @@ const initialProducts: schema.Product[] = [
     name: "Nasi Goreng Spesial",
     slug: "nasi-goreng-spesial",
     description: "Nasi goreng bumbu rahasia dengan telur ceplok dan kerupuk",
+    costPrice: 12000,
     price: 18000,
     imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -176,6 +190,7 @@ const initialProducts: schema.Product[] = [
     name: "Mie Kocok Spesial Kikil",
     slug: "mie-kocok-spesial-kikil",
     description: "Mie kuning lembut disiram kuah kaldu sapi pekat bertabur kikil gurih",
+    costPrice: 15000,
     price: 22000,
     imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -190,6 +205,7 @@ const initialProducts: schema.Product[] = [
     name: "Bakso Sapi Urat Super",
     slug: "bakso-sapi-urat-super",
     description: "Bakso urat jumbo dengan kuah gurih dan pangsit goreng",
+    costPrice: 14000,
     price: 20000,
     imageUrl: "https://images.unsplash.com/photo-1543353071-873f17a7a088?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -204,6 +220,7 @@ const initialProducts: schema.Product[] = [
     name: "Cireng Isi Sambal Rujak",
     slug: "cireng-isi-sambal-rujak",
     description: "Cireng renyah di luar kenyal di dalam dengan saus cocol rujak",
+    costPrice: 8000,
     price: 12000,
     imageUrl: "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -218,6 +235,7 @@ const initialProducts: schema.Product[] = [
     name: "Kopi Susu Gula Aren Subang",
     slug: "kopi-susu-gula-aren-subang",
     description: "Kopi robusta Ciater dengan susu murni dan gula aren asli",
+    costPrice: 10000,
     price: 15000,
     imageUrl: "https://images.unsplash.com/photo-1517686469429-8a935e1c7b9c?auto=format&fit=crop&w=600&q=80",
     isAvailable: true,
@@ -230,11 +248,13 @@ const initialProducts: schema.Product[] = [
 const initialDrivers: schema.Driver[] = [
   {
     id: "d1111111-1111-1111-1111-111111111111",
+    areaId: CIATER_AREA_ID,
     name: "Kang Asep Kurniawan",
     phone: "081311223344",
     whatsapp: "6281311223344",
     vehicleType: "Honda Vario 160",
     vehiclePlate: "T 4521 WX",
+    commissionPercent: 80,
     isActive: true,
     notes: "Driver senior area Subang Kota & Ciater",
     createdAt: now,
@@ -242,11 +262,13 @@ const initialDrivers: schema.Driver[] = [
   },
   {
     id: "d2222222-2222-2222-2222-222222222222",
+    areaId: CIATER_AREA_ID,
     name: "Mang Dedi Sukandar",
     phone: "085899887766",
     whatsapp: "6285899887766",
     vehicleType: "Yamaha NMAX",
     vehiclePlate: "T 2890 ZY",
+    commissionPercent: 80,
     isActive: true,
     notes: "Standby area Jalancagak & Pagaden",
     createdAt: now,
@@ -254,11 +276,13 @@ const initialDrivers: schema.Driver[] = [
   },
   {
     id: "d3333333-3333-3333-3333-333333333333",
+    areaId: CIATER_AREA_ID,
     name: "Ujang Supriatna",
     phone: "087712349876",
     whatsapp: "6287712349876",
     vehicleType: "Honda Beat",
     vehiclePlate: "T 6143 KL",
+    commissionPercent: 80,
     isActive: false,
     notes: "Sedang istirahat / off duty",
     createdAt: now,
@@ -269,6 +293,7 @@ const initialDrivers: schema.Driver[] = [
 const initialOrders: InMemoryStore["orders"] = [
   {
     id: "ord-1111111-1111-1111-1111-111111111111",
+    areaId: CIATER_AREA_ID,
     orderNumber: "SHL-20260907-001",
     merchantId: "m1111111-1111-1111-1111-111111111111",
     driverId: "d1111111-1111-1111-1111-111111111111",
@@ -276,16 +301,27 @@ const initialOrders: InMemoryStore["orders"] = [
     customerPhone: "081288990011",
     customerAddress: "Perumahan Subang Indah Blok C No. 14, Subang",
     customerNote: "Tolong sambal dipisah dan kuah soto dibuat lebih panas ya",
+    source: "WEBSITE_WHATSAPP",
     status: "DELIVERING",
+    merchantStatus: "READY",
     subtotal: 50000,
     deliveryFee: 10000,
     discount: 5000,
     total: 55000,
     paymentMethod: "COD / Tunai",
     paymentStatus: "PENDING",
+    promoCode: null,
     adminNote: "Driver sudah pickup dari resto",
     assignedAt: new Date(Date.now() - 15 * 60 * 1000),
     assignedBy: "Admin Sharelok",
+    customerContactedAt: new Date(Date.now() - 38 * 60 * 1000),
+    merchantContactedAt: new Date(Date.now() - 35 * 60 * 1000),
+    merchantRespondedAt: new Date(Date.now() - 33 * 60 * 1000),
+    driverCommissionPercent: null,
+    driverCommissionAmount: null,
+    merchantPayoutAmount: null,
+    platformRevenueAmount: null,
+    completedAt: null,
     createdAt: new Date(Date.now() - 40 * 60 * 1000),
     updatedAt: new Date(Date.now() - 15 * 60 * 1000),
     items: [
@@ -294,6 +330,7 @@ const initialOrders: InMemoryStore["orders"] = [
         orderId: "ord-1111111-1111-1111-1111-111111111111",
         productId: "p1111111-1111-1111-1111-111111111111",
         productName: "Soto Subang Komplit",
+        costPrice: 18000,
         price: 25000,
         quantity: 2,
         subtotal: 50000,
@@ -328,14 +365,17 @@ const initialOrders: InMemoryStore["orders"] = [
         id: "assign-1",
         orderId: "ord-1111111-1111-1111-1111-111111111111",
         driverId: "d1111111-1111-1111-1111-111111111111",
+        status: "ACCEPTED",
         assignedBy: "Admin Sharelok",
         reason: "Driver terdekat dengan lokasi warung soto",
+        respondedAt: new Date(Date.now() - 23 * 60 * 1000),
         createdAt: new Date(Date.now() - 25 * 60 * 1000),
       },
     ],
   },
   {
     id: "ord-2222222-2222-2222-2222-222222222222",
+    areaId: CIATER_AREA_ID,
     orderNumber: "SHL-20260907-002",
     merchantId: "m2222222-2222-2222-2222-222222222222",
     driverId: null,
@@ -343,16 +383,27 @@ const initialOrders: InMemoryStore["orders"] = [
     customerPhone: "082155667788",
     customerAddress: "Jl. Otista No. 78, Pasirkareumbi, Subang",
     customerNote: "Mie kocok jangan pakai seledri",
+    source: "WEBSITE_WHATSAPP",
     status: "PREPARING",
+    merchantStatus: "PREPARING",
     subtotal: 42000,
     deliveryFee: 8000,
     discount: 0,
     total: 50000,
     paymentMethod: "QRIS / Transfer",
     paymentStatus: "PAID",
+    promoCode: null,
     adminNote: "Menunggu makanan selesai dimasak untuk assign driver",
     assignedAt: null,
     assignedBy: null,
+    customerContactedAt: new Date(Date.now() - 17 * 60 * 1000),
+    merchantContactedAt: new Date(Date.now() - 15 * 60 * 1000),
+    merchantRespondedAt: new Date(Date.now() - 14 * 60 * 1000),
+    driverCommissionPercent: null,
+    driverCommissionAmount: null,
+    merchantPayoutAmount: null,
+    platformRevenueAmount: null,
+    completedAt: null,
     createdAt: new Date(Date.now() - 18 * 60 * 1000),
     updatedAt: new Date(Date.now() - 10 * 60 * 1000),
     items: [
@@ -361,6 +412,7 @@ const initialOrders: InMemoryStore["orders"] = [
         orderId: "ord-2222222-2222-2222-2222-222222222222",
         productId: "p3333333-3333-3333-3333-333333333333",
         productName: "Mie Kocok Spesial Kikil",
+        costPrice: 15000,
         price: 22000,
         quantity: 1,
         subtotal: 22000,
@@ -371,6 +423,7 @@ const initialOrders: InMemoryStore["orders"] = [
         orderId: "ord-2222222-2222-2222-2222-222222222222",
         productId: "p4444444-4444-4444-4444-444444444444",
         productName: "Bakso Sapi Urat Super",
+        costPrice: 14000,
         price: 20000,
         quantity: 1,
         subtotal: 20000,
@@ -397,6 +450,7 @@ const initialOrders: InMemoryStore["orders"] = [
   },
   {
     id: "ord-3333333-3333-3333-3333-333333333333",
+    areaId: CIATER_AREA_ID,
     orderNumber: "SHL-20260907-003",
     merchantId: "m3333333-3333-3333-3333-333333333333",
     driverId: null,
@@ -404,16 +458,27 @@ const initialOrders: InMemoryStore["orders"] = [
     customerPhone: "081977665544",
     customerAddress: "Kantor BPN Subang, Jl. Mayjen Sutoyo",
     customerNote: "Kopi manis sedang, es dipisah",
+    source: "WEBSITE_WHATSAPP",
     status: "PENDING",
+    merchantStatus: "NOT_CONTACTED",
     subtotal: 27000,
     deliveryFee: 10000,
     discount: 0,
     total: 37000,
     paymentMethod: "COD / Tunai",
     paymentStatus: "PENDING",
+    promoCode: null,
     adminNote: null,
     assignedAt: null,
     assignedBy: null,
+    customerContactedAt: null,
+    merchantContactedAt: null,
+    merchantRespondedAt: null,
+    driverCommissionPercent: null,
+    driverCommissionAmount: null,
+    merchantPayoutAmount: null,
+    platformRevenueAmount: null,
+    completedAt: null,
     createdAt: new Date(Date.now() - 5 * 60 * 1000),
     updatedAt: new Date(Date.now() - 5 * 60 * 1000),
     items: [
@@ -422,6 +487,7 @@ const initialOrders: InMemoryStore["orders"] = [
         orderId: "ord-3333333-3333-3333-3333-333333333333",
         productId: "p5555555-5555-5555-5555-555555555555",
         productName: "Cireng Isi Sambal Rujak",
+        costPrice: 8000,
         price: 12000,
         quantity: 1,
         subtotal: 12000,
@@ -432,6 +498,7 @@ const initialOrders: InMemoryStore["orders"] = [
         orderId: "ord-3333333-3333-3333-3333-333333333333",
         productId: "p6666666-6666-6666-6666-666666666666",
         productName: "Kopi Susu Gula Aren Subang",
+        costPrice: 10000,
         price: 15000,
         quantity: 1,
         subtotal: 15000,
@@ -457,9 +524,11 @@ const globalForStore = globalThis as unknown as { sharelokStore?: InMemoryStore 
 export const store: InMemoryStore =
   globalForStore.sharelokStore || {
     categories: initialCategories,
+    serviceAreas: initialServiceAreas,
     merchants: initialMerchants,
     products: initialProducts,
     drivers: initialDrivers,
+    promoCodes: [],
     orders: initialOrders,
   };
 

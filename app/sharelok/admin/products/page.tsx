@@ -39,6 +39,7 @@ export default function AdminProductsPage() {
     merchantId: "",
     categoryId: "",
     description: "",
+    costPrice: 10000,
     price: 15000,
     imageUrl: "",
     sortOrder: 0,
@@ -80,6 +81,7 @@ export default function AdminProductsPage() {
       merchantId: merchants[0]?.id || "",
       categoryId: categories[0]?.id || "",
       description: "",
+      costPrice: 12000,
       price: 20000,
       imageUrl: "",
       sortOrder: products.length + 1,
@@ -96,6 +98,7 @@ export default function AdminProductsPage() {
       merchantId: p.merchantId,
       categoryId: p.categoryId || "",
       description: p.description || "",
+      costPrice: p.costPrice,
       price: p.price,
       imageUrl: p.imageUrl || "",
       sortOrder: p.sortOrder,
@@ -218,7 +221,9 @@ export default function AdminProductsPage() {
                 <th className="px-4 py-3.5">Menu Makanan</th>
                 <th className="px-4 py-3.5">Merchant</th>
                 <th className="px-4 py-3.5">Kategori</th>
-                <th className="px-4 py-3.5">Harga</th>
+                <th className="px-4 py-3.5">HPP</th>
+                <th className="px-4 py-3.5">Harga Jual</th>
+                <th className="px-4 py-3.5">Margin</th>
                 <th className="px-4 py-3.5">Ketersediaan</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
@@ -226,7 +231,7 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">
                     <UtensilsCrossed className="mx-auto mb-2 h-8 w-8 text-zinc-300" />
                     Belum ada data menu kuliner.
                   </td>
@@ -263,8 +268,14 @@ export default function AdminProductsPage() {
                         {p.category?.name || "Umum"}
                       </span>
                     </td>
+                    <td className="px-4 py-3.5 font-semibold text-zinc-600">
+                      {fmt(p.costPrice)}
+                    </td>
                     <td className="px-4 py-3.5 font-bold text-emerald-700">
                       {fmt(p.price)}
+                    </td>
+                    <td className={`px-4 py-3.5 font-bold ${p.price - p.costPrice >= 0 ? "text-blue-700" : "text-red-700"}`}>
+                      {fmt(p.price - p.costPrice)}
                     </td>
                     <td className="px-4 py-3.5">
                       <button
@@ -405,7 +416,23 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-zinc-700 mb-1">
-                    Harga Jual (Rp) *
+                    Harga HPP (Rp) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={500}
+                    value={formData.costPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, costPrice: parseInt(e.target.value) || 0 })
+                    }
+                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-zinc-700 mb-1">
+                    Harga Jual Customer (Rp) *
                   </label>
                   <input
                     type="number"
@@ -419,19 +446,20 @@ export default function AdminProductsPage() {
                     className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold text-zinc-700 mb-1">
-                    Urutan Sort
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.sortOrder}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })
-                    }
-                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
+              </div>
+
+              <div className={`rounded-xl px-3 py-2 text-xs font-semibold ${formData.price - formData.costPrice >= 0 ? "bg-blue-50 text-blue-800" : "bg-red-50 text-red-700"}`}>
+                Margin per item: {fmt(formData.price - formData.costPrice)}
+              </div>
+
+              <div>
+                <label className="block font-semibold text-zinc-700 mb-1">Urutan Sort</label>
+                <input
+                  type="number"
+                  value={formData.sortOrder}
+                  onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                />
               </div>
 
               <div>
