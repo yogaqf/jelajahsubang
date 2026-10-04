@@ -248,8 +248,8 @@ export default function AdminOrdersPage() {
   const [assignReason, setAssignReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [pricingForm, setPricingForm] = useState({
-    deliveryFee: 0,
+  const [pricingForm, setPricingForm] = useState<{ deliveryFee: number | ""; paymentMethod: string }>({
+    deliveryFee: "",
     paymentMethod: "QRIS",
   });
 
@@ -267,7 +267,7 @@ export default function AdminOrdersPage() {
       const detail = await fetchOrderDetail(order.id);
       setSelectedOrder(detail);
       setPricingForm({
-        deliveryFee: Number(detail.deliveryFee || 0),
+        deliveryFee: Number(detail.deliveryFee || 0) > 0 ? Number(detail.deliveryFee) : "",
         paymentMethod: detail.paymentMethod && detail.paymentMethod !== "Belum disepakati" ? detail.paymentMethod : "QRIS",
       });
     } catch (error) {
@@ -397,7 +397,7 @@ export default function AdminOrdersPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          deliveryFee: pricingForm.deliveryFee,
+          deliveryFee: Number(pricingForm.deliveryFee),
           paymentMethod: pricingForm.paymentMethod,
           paymentStatus: order.paymentStatus === "PAID" ? "PAID" : "PENDING",
         }),
@@ -416,16 +416,17 @@ export default function AdminOrdersPage() {
       setActionError("Mitra harus menerima ketersediaan order sebelum total dikonfirmasi ke customer.");
       return;
     }
-    if (!Number.isFinite(pricingForm.deliveryFee) || pricingForm.deliveryFee <= 0) {
+    const deliveryFee = Number(pricingForm.deliveryFee);
+    if (!Number.isFinite(deliveryFee) || deliveryFee <= 0) {
       const message = "Ongkir wajib diisi dan harus lebih dari Rp0 sebelum lanjut ke customer.";
       setActionError(message);
       window.alert(message);
       return;
     }
-    const total = order.subtotal + pricingForm.deliveryFee - order.discount;
+    const total = order.subtotal + deliveryFee - order.discount;
     openWhatsApp(
       order.customerPhone,
-      `Halo Kak ${order.customerName} 👋\nMenu pesanan *${order.orderNumber}* tersedia!\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(pricingForm.deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nBalas *SETUJU* untuk konfirmasi menu dan ongkir, lalu lanjut pembayaran ${pricingForm.paymentMethod === "COD" ? "COD" : "melalui QRIS"} ya 🙏`
+      `Halo Kak ${order.customerName} 👋\nMenu pesanan *${order.orderNumber}* tersedia!\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nBalas *SETUJU* untuk konfirmasi menu dan ongkir, lalu lanjut pembayaran ${pricingForm.paymentMethod === "COD" ? "COD" : "melalui QRIS"} ya 🙏`
     );
     await handleSavePricing(order);
     if (order.status === "WAITING_CONFIRMATION" || order.status === "PENDING") {
@@ -469,7 +470,8 @@ export default function AdminOrdersPage() {
     setActionError("");
     if (step === 2) return order.merchantStatus === "CONTACTED" ? handleMerchantStatus(order.id, "ACCEPTED") : handleContactMerchant(order);
     if (step === 3) {
-      if (!Number.isFinite(pricingForm.deliveryFee) || pricingForm.deliveryFee <= 0) {
+      const deliveryFee = Number(pricingForm.deliveryFee);
+      if (!Number.isFinite(deliveryFee) || deliveryFee <= 0) {
         const message = "Ongkir wajib diisi dan harus lebih dari Rp0 sebelum menekan Next.";
         setActionError(message);
         window.alert(message);
@@ -908,8 +910,21 @@ export default function AdminOrdersPage() {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="space-y-1 text-[11px] font-semibold text-zinc-600">
                   <span>Ongkir</span>
-                  <input type="number" min={1000} step={1000} required value={pricingForm.deliveryFee} onChange={(event) => { setPricingForm({ ...pricingForm, deliveryFee: Number(event.target.value) || 0 }); if (Number(event.target.value) > 0) setActionError(""); }} className={`w-full rounded-lg border bg-white px-2.5 py-2 text-xs text-zinc-900 focus:outline-none ${pricingForm.deliveryFee <= 0 ? "border-red-300 focus:border-red-500" : "border-zinc-200 focus:border-emerald-500"}`} />
-                  {pricingForm.deliveryFee <= 0 && <span className="block text-[9px] font-semibold text-red-600">Wajib diisi sebelum Next</span>}
+                  <input
+                    type="number"
+                    min={1000}
+                    step={1000}
+                    required
+                    placeholder="Masukkan nominal ongkir"
+                    value={pricingForm.deliveryFee}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setPricingForm({ ...pricingForm, deliveryFee: value === "" ? "" : Number(value) });
+                      if (Number(value) > 0) setActionError("");
+                    }}
+                    className={`w-full rounded-lg border bg-white px-2.5 py-2 text-xs text-zinc-900 focus:outline-none ${Number(pricingForm.deliveryFee) <= 0 ? "border-red-300 focus:border-red-500" : "border-zinc-200 focus:border-emerald-500"}`}
+                  />
+                  {Number(pricingForm.deliveryFee) <= 0 && <span className="block text-[9px] font-semibold text-red-600">Wajib diisi sebelum Next</span>}
                 </label>
                 <label className="space-y-1 text-[11px] font-semibold text-zinc-600">
                   <span>Pembayaran</span>
@@ -919,6 +934,27 @@ export default function AdminOrdersPage() {
                     <option value="COD">COD</option>
                   </select>
                 </label>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Pilih nominal cepat</span>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+                  {[10000, 12000, 15000, 18000, 20000].map((amount) => {
+                    const isSelected = Number(pricingForm.deliveryFee) === amount;
+                    return (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => {
+                          setPricingForm({ ...pricingForm, deliveryFee: amount });
+                          setActionError("");
+                        }}
+                        className={`rounded-lg border px-2 py-2 text-[10px] font-extrabold transition-colors ${isSelected ? "border-emerald-600 bg-emerald-600 text-white" : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"}`}
+                      >
+                        {fmt(amount)}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-semibold text-blue-700">Isi rincian di atas, lalu gunakan tombol Next pada alur pesanan untuk menyimpan dan melanjutkan.</div>
               <div className="border-t border-zinc-200 pt-3" />
