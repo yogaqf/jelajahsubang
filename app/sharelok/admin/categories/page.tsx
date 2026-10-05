@@ -333,7 +333,7 @@ export default function AdminCategoriesPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.sortOrder}
+                    value={formData.sortOrder || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })
                     }

@@ -1,74 +1,21 @@
-"use client";
-import { useState } from "react";
+import { ArrowRight, ShoppingBag } from "lucide-react";
 import { Navbar } from "@/components/navbar";
+import Footer from "@/components/footer";
+import { getPortalEntries } from "@/lib/portal-db";
 
-interface Product {
-      id: number;
-      name: string;
-      price: string;
-      description: string;
-      image: string;
-}
+const fallbackProducts = [
+  { id: "kaos", title: "Kaos Jelajah Subang", summary: "Kaos nyaman dengan identitas Jelajah Subang.", price: 150000, imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", externalUrl: "#" },
+  { id: "tote", title: "Tote Bag Jelajah Subang", summary: "Teman praktis untuk membawa cerita perjalananmu.", price: 100000, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=900&q=80", externalUrl: "#" },
+];
+const money = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 
-export default function ShopPage() {
-      const [products] = useState<Product[]>([
-            {
-                  id: 1,
-                  name: "Kaos Jelajah Subang",
-                  price: "Rp 150.000",
-                  description: "Kaos berkualitas dengan desain eksklusif Jelajah Subang",
-                  image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80",
-            },
-            {
-                  id: 2,
-                  name: "Tote Bag Jelajah Subang",
-                  price: "Rp 100.000",
-                  description: "Tote bag praktis dengan motif khas Jelajah Subang",
-                  image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
-            },
-            {
-                  id: 3,
-                  name: "Stiker Jelajah Subang",
-                  price: "Rp 20.000",
-                  description: "Set stiker lucu dengan ilustrasi tempat wisata di Subang",
-                  image: "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=800&q=80",
-            },
-            {
-                  id: 4,
-                  name: "Mug Jelajah Subang",
-                  price: "Rp 80.000",
-                  description: "Mug keramik dengan desain pemandangan alam Subang yang menawan",
-                  image: "https://images.unsplash.com/photo-1517686469429-8a935e1c7b9c?auto=format&fit=crop&w=800&q=80",
-            },
-      ]);
+export const dynamic = "force-dynamic";
 
-      return (
-            <div className="min-h-screen bg-zinc-50">
-                  <Navbar />
-                  <main className="mx-auto w-full max-w-7xl px-3 py-12 sm:px-4">
-                        <h1 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">Shop Jelajah Subang</h1>
-                        <p className="mt-3 text-zinc-600">Temukan merchandise eksklusif dengan desain khas Jelajah Subang.</p>
-                        <section className="mt-10 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                              {products.map((product) => (
-                                    <div key={product.id} className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                                          <div className="relative w-full h-48 bg-gray-200">
-                                                <img
-                                                      src={product.image}
-                                                      alt={product.name}
-                                                      className="w-full h-full object-cover"
-                                                      loading="lazy"
-                                                />
-                                          </div>
-                                          <h2 className="mt-4 text-xl font-semibold text-black">{product.name}</h2>
-                                          <p className="mt-2 text-zinc-600">{product.description}</p>
-                                          <p className="mt-2 text-zinc-800 font-bold">{product.price}</p>
-                                          <button className="mt-auto bg-black text-white hover:bg-black py-2 px-4 rounded-lg">
-                                                Beli Sekarang
-                                          </button>
-                                    </div>
-                              ))}
-                        </section>
-                  </main>
-            </div>
-      );
+export default async function ShopPage() {
+  const managed = await getPortalEntries({ type: "SHOP", publishedOnly: true });
+  const products = managed.length ? managed : fallbackProducts;
+  return <div className="min-h-screen bg-[#f7f8f4]"><Navbar /><main>
+    <section className="bg-zinc-950 px-4 pb-20 pt-16 text-white"><div className="mx-auto max-w-7xl"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950"><ShoppingBag className="h-6 w-6" /></div><h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl">Shop Jelajah Subang</h1><p className="mt-4 max-w-2xl text-base leading-7 text-white/60">Produk lokal dan merchandise yang membawa semangat Subang lebih dekat denganmu.</p></div></section>
+    <section className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:grid-cols-2 lg:grid-cols-4">{products.map((product) => <article key={product.id} className="group overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm"><div className="aspect-square bg-zinc-100 bg-cover bg-center transition duration-500 group-hover:scale-105" style={{ backgroundImage: `url(${product.imageUrl || "/images/hero.jpg"})` }} /><div className="relative bg-white p-5"><h2 className="text-lg font-black">{product.title}</h2><p className="mt-2 min-h-10 text-sm leading-5 text-zinc-500">{product.summary}</p><p className="mt-4 font-black text-emerald-700">{money(product.price)}</p><a href={product.externalUrl || "#"} target={product.externalUrl?.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white">Lihat produk<ArrowRight className="h-4 w-4" /></a></div></article>)}</section>
+  </main><Footer /></div>;
 }

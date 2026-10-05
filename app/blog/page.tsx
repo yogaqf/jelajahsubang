@@ -1,10 +1,12 @@
 import Link from "next/link";
 
 import { Navbar } from "@/components/navbar";
-import { getAllBlogPosts } from "@/lib/blog";
+import { getManagedBlogPosts } from "@/lib/blog";
 
-export default function BlogPage() {
-  const posts = getAllBlogPosts();
+export const dynamic = "force-dynamic";
+
+export default async function BlogPage() {
+  const posts = await getManagedBlogPosts();
 
   return (
     <div className="min-h-screen bg-zinc-50">

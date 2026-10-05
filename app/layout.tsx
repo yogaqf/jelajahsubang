@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jelajah Subang",
-  description: "Portal wisata Jelajah Subang",
+  title: { default: "Jelajah Subang — Wisata, Kuliner & Cerita Lokal", template: "%s | Jelajah Subang" },
+  description: "Temukan destinasi, kuliner, cerita lokal, dan produk pilihan dari Kabupaten Subang.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="id" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
         {children}
         <Analytics />

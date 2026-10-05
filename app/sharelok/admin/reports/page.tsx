@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, Bike, CalendarDays, FileDown, ImageDown, Loader2, MapPinned, MessageCircle, RefreshCw, Store, WalletCards } from "lucide-react";
+import { BarChart3, Bike, CalendarDays, FileDown, ImageDown, Loader2, MapPinned, RefreshCw, Store, WalletCards } from "lucide-react";
 import { downloadDailyReportPdf } from "@/lib/sharelok-daily-report-pdf";
 
 interface DailyReport {
@@ -13,8 +13,8 @@ interface DailyReport {
     driverCommissions: number;
     platformRevenue: number;
   };
-  merchants: { merchantId: string; merchantName: string; whatsapp: string; orders: number; sales: number; payout: number }[];
-  drivers: { driverId: string; driverName: string; whatsapp: string; orders: number; deliveryFees: number; commission: number }[];
+  merchants: { merchantId: string; merchantName: string; orders: number; sales: number; payout: number }[];
+  drivers: { driverId: string; driverName: string; orders: number; deliveryFees: number; commission: number }[];
   areas: { areaId: string | null; areaName: string; orders: number; customerPayments: number; platformRevenue: number }[];
   menus: { productId: string | null; productName: string; merchantName: string; orders: number; quantity: number; sales: number }[];
   closings: {
@@ -48,13 +48,6 @@ function jakartaToday() {
 
 function money(value: number) {
   return "Rp " + Number(value || 0).toLocaleString("id-ID");
-}
-
-function whatsappNumber(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
-  if (digits.startsWith("8")) return `62${digits}`;
-  return digits;
 }
 
 function displayDate(value: string) {
@@ -260,15 +253,13 @@ export default function DailyClosingReportPage() {
     { label: "Pendapatan Sharelok", value: money(report.totals.platformRevenue), tone: "text-emerald-700" },
   ] : [];
 
-  async function shareSettlement(kind: "merchant" | "driver", partnerId: string) {
+  async function downloadSettlement(kind: "merchant" | "driver", partnerId: string) {
     if (!report || sharingKey) return;
     const key = `${kind}-${partnerId}`;
     setSharingKey(key);
     setShareNotice("");
-    const whatsappWindow = window.open("", "_blank");
     try {
       let name: string;
-      let whatsapp: string;
       let orders: number;
       let primaryValue: number;
       let secondaryValue: number;
@@ -276,7 +267,6 @@ export default function DailyClosingReportPage() {
         const merchant = report.merchants.find((item) => item.merchantId === partnerId);
         if (!merchant) throw new Error("Data rincian mitra tidak ditemukan.");
         name = merchant.merchantName;
-        whatsapp = whatsappNumber(merchant.whatsapp);
         orders = merchant.orders;
         primaryValue = merchant.payout;
         secondaryValue = merchant.sales;
@@ -284,12 +274,10 @@ export default function DailyClosingReportPage() {
         const driver = report.drivers.find((item) => item.driverId === partnerId);
         if (!driver) throw new Error("Data rincian driver tidak ditemukan.");
         name = driver.driverName;
-        whatsapp = whatsappNumber(driver.whatsapp);
         orders = driver.orders;
         primaryValue = driver.commission;
         secondaryValue = driver.deliveryFees;
       }
-      if (!whatsapp) throw new Error(`Nomor WhatsApp ${name} belum tersedia.`);
 
       const closings = report.closings.filter((item) =>
         kind === "merchant" ? item.merchantId === partnerId : item.driverId === partnerId
@@ -319,16 +307,8 @@ export default function DailyClosingReportPage() {
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      const message = kind === "merchant"
-        ? `Halo Kak, berikut rincian pembayaran closing Sharelok tanggal ${displayDate(report.date)} untuk ${name}. Total dibayarkan *${money(primaryValue)}*. Mohon dicek ya, terima kasih 🙏`
-        : `Halo Kak ${name}, berikut rincian komisi closing Sharelok tanggal ${displayDate(report.date)}. Total komisi *${money(primaryValue)}*. Mohon dicek ya, terima kasih 🙏`;
-      const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
-      if (whatsappWindow) whatsappWindow.location.href = whatsappUrl;
-      else window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-      setShareNotice(`Chat WhatsApp ${name} dibuka. Lampirkan JPEG ${filename} yang baru diunduh.`);
+      setShareNotice(`JPEG ${name} berhasil diunduh dengan nama ${filename}.`);
     } catch (caught) {
-      whatsappWindow?.close();
       setShareNotice(caught instanceof Error ? caught.message : "Gagal membuat rincian JPEG.");
     } finally {
       setSharingKey("");
@@ -405,8 +385,8 @@ export default function DailyClosingReportPage() {
               <div key={item.merchantId} className="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
                 <div><div className="font-bold text-zinc-900">{item.merchantName}</div><div className="text-zinc-400">{item.orders} order · penjualan {money(item.sales)}</div></div>
                 <div className="ml-auto text-right"><div className="text-[10px] text-zinc-400">Harus dibayar</div><div className="font-extrabold text-amber-700">{money(item.payout)}</div></div>
-                <button type="button" onClick={() => shareSettlement("merchant", item.merchantId)} disabled={Boolean(sharingKey)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[10px] font-black text-white hover:bg-emerald-700 disabled:opacity-50">
-                  {sharingKey === `merchant-${item.merchantId}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />} Kirim via WA
+                <button type="button" onClick={() => downloadSettlement("merchant", item.merchantId)} disabled={Boolean(sharingKey)} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-2 text-[10px] font-black text-amber-800 hover:bg-amber-200 disabled:opacity-50">
+                  {sharingKey === `merchant-${item.merchantId}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />} Unduh JPEG
                 </button>
               </div>
             )) : <div className="py-8 text-center text-xs text-zinc-400">Belum ada closing pada tanggal ini.</div>}
@@ -420,8 +400,8 @@ export default function DailyClosingReportPage() {
               <div key={item.driverId} className="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
                 <div><div className="font-bold text-zinc-900">{item.driverName}</div><div className="text-zinc-400">{item.orders} order · ongkir {money(item.deliveryFees)}</div></div>
                 <div className="ml-auto text-right"><div className="text-[10px] text-zinc-400">Komisi diterima</div><div className="font-extrabold text-purple-700">{money(item.commission)}</div></div>
-                <button type="button" onClick={() => shareSettlement("driver", item.driverId)} disabled={Boolean(sharingKey)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[10px] font-black text-white hover:bg-emerald-700 disabled:opacity-50">
-                  {sharingKey === `driver-${item.driverId}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />} Kirim via WA
+                <button type="button" onClick={() => downloadSettlement("driver", item.driverId)} disabled={Boolean(sharingKey)} className="inline-flex items-center gap-1.5 rounded-lg bg-purple-100 px-3 py-2 text-[10px] font-black text-purple-800 hover:bg-purple-200 disabled:opacity-50">
+                  {sharingKey === `driver-${item.driverId}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />} Unduh JPEG
                 </button>
               </div>
             )) : <div className="py-8 text-center text-xs text-zinc-400">Belum ada komisi driver.</div>}

@@ -18,10 +18,12 @@ import {
   ChartNoAxesCombined,
   MapPinned,
   BadgePercent,
+  PanelsTopLeft,
 } from "lucide-react";
 
 const navLinks = [
   { href: "/sharelok/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/sharelok/admin/content", label: "CMS Portal Jelajah", icon: PanelsTopLeft },
   { href: "/sharelok/admin/orders", label: "Pesanan (Orders)", icon: ShoppingBag },
   { href: "/sharelok/admin/reports", label: "Laporan Closing", icon: ChartNoAxesCombined },
   { href: "/sharelok/admin/areas", label: "Area Layanan", icon: MapPinned },

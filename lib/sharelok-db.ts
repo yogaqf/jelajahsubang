@@ -1,16 +1,23 @@
 import { db, store, isDatabaseConfigured } from "@/db";
 import * as schema from "@/db/schema";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt } from "drizzle-orm";
 
 export { isDatabaseConfigured };
 
 // ====================================================
 // 1. STATS
 // ====================================================
-export async function getSharelokStats() {
+export async function getSharelokStats(from?: Date, to?: Date) {
   if (db && isDatabaseConfigured) {
     try {
-      const allOrders = await db.select().from(schema.orders);
+      const dateFilter = from && to
+        ? and(gte(schema.orders.createdAt, from), lt(schema.orders.createdAt, to))
+        : from
+          ? gte(schema.orders.createdAt, from)
+          : to
+            ? lt(schema.orders.createdAt, to)
+            : undefined;
+      const allOrders = await db.select().from(schema.orders).where(dateFilter);
       const allDrivers = await db.select().from(schema.drivers);
       const allMerchants = await db.select().from(schema.merchants);
       const allAreas = await db.select().from(schema.serviceAreas);
@@ -46,19 +53,22 @@ export async function getSharelokStats() {
   }
 
   // Fallback to memory store
-  const totalRevenue = store.orders
+  const periodOrders = store.orders.filter((order) =>
+    (!from || order.createdAt >= from) && (!to || order.createdAt < to)
+  );
+  const totalRevenue = periodOrders
     .filter((o) => o.status === "COMPLETED")
     .reduce((sum, o) => sum + o.total, 0);
 
   return {
-    totalRevenue: totalRevenue || 55000,
-    totalOrders: store.orders.length,
-    pendingOrders: store.orders.filter((o) =>
+    totalRevenue,
+    totalOrders: periodOrders.length,
+    pendingOrders: periodOrders.filter((o) =>
       ["WAITING_CONFIRMATION", "CONTACTED", "PENDING"].includes(o.status)
     ).length,
-    preparingOrders: store.orders.filter((o) => o.status === "PREPARING").length,
-    deliveringOrders: store.orders.filter((o) => o.status === "DELIVERING").length,
-    completedOrders: store.orders.filter((o) => o.status === "COMPLETED").length,
+    preparingOrders: periodOrders.filter((o) => o.status === "PREPARING").length,
+    deliveringOrders: periodOrders.filter((o) => o.status === "DELIVERING").length,
+    completedOrders: periodOrders.filter((o) => o.status === "COMPLETED").length,
     activeDrivers: store.drivers.filter((d) => d.isActive).length,
     activeMerchants: store.merchants.filter((m) => m.isActive).length,
     activeAreas: store.serviceAreas.filter((area) => area.isActive).length,
@@ -69,13 +79,21 @@ export async function getSharelokStats() {
 // ====================================================
 // 2. ORDERS
 // ====================================================
-export async function getOrders(filterStatus?: string, search?: string) {
+export async function getOrders(filterStatus?: string, search?: string, from?: Date, to?: Date) {
   if (db && isDatabaseConfigured) {
     try {
+      const statusFilter = filterStatus && filterStatus !== "ALL"
+        ? eq(schema.orders.status, filterStatus as schema.OrderStatus)
+        : undefined;
+      const dateFilter = from && to
+        ? and(gte(schema.orders.createdAt, from), lt(schema.orders.createdAt, to))
+        : from
+          ? gte(schema.orders.createdAt, from)
+          : to
+            ? lt(schema.orders.createdAt, to)
+            : undefined;
       const ordersList = await db.query.orders.findMany({
-        where: filterStatus && filterStatus !== "ALL"
-          ? eq(schema.orders.status, filterStatus as schema.OrderStatus)
-          : undefined,
+        where: statusFilter && dateFilter ? and(statusFilter, dateFilter) : statusFilter || dateFilter,
         with: {
           area: true,
           merchant: true,
@@ -121,6 +139,8 @@ export async function getOrders(filterStatus?: string, search?: string) {
   if (filterStatus && filterStatus !== "ALL") {
     result = result.filter((o) => o.status === filterStatus);
   }
+  if (from) result = result.filter((order) => order.createdAt >= from);
+  if (to) result = result.filter((order) => order.createdAt < to);
   if (search) {
     const q = search.toLowerCase();
     result = result.filter(
@@ -1410,10 +1430,8 @@ export async function getDailyClosingReport(date: string) {
         areaName: order.area?.name || "Area belum ditentukan",
         merchantId: order.merchantId,
         merchantName: order.merchant?.name || "Mitra tidak ditemukan",
-        merchantWhatsapp: order.merchant?.whatsapp || order.merchant?.phone || "",
         driverId: order.driverId,
         driverName: order.driver?.name || "Tanpa driver",
-        driverWhatsapp: order.driver?.whatsapp || order.driver?.phone || "",
         subtotal: Number(order.subtotal),
         deliveryFee: Number(order.deliveryFee),
         discount: Number(order.discount),
@@ -1431,8 +1449,8 @@ export async function getDailyClosingReport(date: string) {
       };
     });
 
-  const merchantMap = new Map<string, { merchantId: string; merchantName: string; whatsapp: string; orders: number; sales: number; payout: number }>();
-  const driverMap = new Map<string, { driverId: string; driverName: string; whatsapp: string; orders: number; deliveryFees: number; commission: number }>();
+  const merchantMap = new Map<string, { merchantId: string; merchantName: string; orders: number; sales: number; payout: number }>();
+  const driverMap = new Map<string, { driverId: string; driverName: string; orders: number; deliveryFees: number; commission: number }>();
   const areaMap = new Map<string, { areaId: string | null; areaName: string; orders: number; customerPayments: number; platformRevenue: number }>();
   const menuMap = new Map<string, { productId: string | null; productName: string; merchantName: string; orderIds: Set<string>; quantity: number; sales: number }>();
   for (const closing of closings) {
@@ -1451,7 +1469,6 @@ export async function getDailyClosingReport(date: string) {
     const merchant = merchantMap.get(closing.merchantId) || {
       merchantId: closing.merchantId,
       merchantName: closing.merchantName,
-      whatsapp: closing.merchantWhatsapp,
       orders: 0,
       sales: 0,
       payout: 0,
@@ -1465,7 +1482,6 @@ export async function getDailyClosingReport(date: string) {
       const driver = driverMap.get(closing.driverId) || {
         driverId: closing.driverId,
         driverName: closing.driverName,
-        whatsapp: closing.driverWhatsapp,
         orders: 0,
         deliveryFees: 0,
         commission: 0,

@@ -340,7 +340,7 @@ export default function AdminDriversPage() {
                     required
                     min={0}
                     max={100}
-                    value={formData.commissionPercent}
+                    value={formData.commissionPercent || ""}
                     onChange={(e) => setFormData({ ...formData, commissionPercent: Math.min(100, Math.max(0, Number(e.target.value))) })}
                     className="w-28 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-bold text-zinc-800 focus:border-emerald-500 focus:outline-none"
                   />

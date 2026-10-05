@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Navbar } from "@/components/navbar";
-import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
+import { getAllBlogPosts, getManagedBlogPostBySlug } from "@/lib/blog";
 
 type BlogDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -17,7 +17,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getManagedBlogPostBySlug(slug);
 
   if (!post) {
     return {
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getManagedBlogPostBySlug(slug);
 
   if (!post) notFound();
 

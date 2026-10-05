@@ -1,58 +1,12 @@
-import React from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { Camera, Mail, Video } from "lucide-react";
 
-const Footer: React.FC = () => {
-      return (
-            <footer className="border-t border-zinc-200 bg-white py-6">
-                  <div className="mx-auto w-full max-w-7xl px-3 sm:px-4">
-                        <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
-                              <Image src="/images/logo.PNG" alt="Jelajah Subang" width={300} height={300} />
-                              <div className="flex gap-10 lg:flex-row flex-col">
-                                    <div className="flex gap-10">
-                                          <div>
-                                                <strong>Our Social Media</strong>
-                                                <ul>
-                                                      <li><a href="https://www.instagram.com/jelajahsubang/">Instagram</a></li>
-                                                      <li><a href="https://www.facebook.com/jelajahsubang">Facebook</a></li>
-                                                      <li><a href="https://twitter.com/jelajahsubang">Twitter</a></li>
-                                                </ul>
-                                          </div>
-                                          <div>
-                                                <strong>Our Partner</strong>
-                                                <ul>
-                                                      <li><a href="https://www.subangkab.go.id/">Pemerintah Kabupaten Subang</a></li>
-                                                      <li><a href="https://www.disparbud.subangkab.go.id/">Dinas Pariwisata dan Kebudayaan Subang</a></li>
-                                                </ul>
-                                          </div>
-                                    </div>
-
-                                    <div className="flex gap-10">
-                                          <div>
-                                                <strong>Support Us</strong>
-                                                <ul>
-                                                      <li><a href="https://www.patreon.com/jelajahsubang">Patreon</a></li>
-                                                      <li><a href="https://www.buymeacoffee.com/jelajahsubang">Buy Me a Coffee</a></li>
-                                                </ul>
-                                          </div>
-                                          <div>
-                                                <strong>Contact Us</strong>
-                                                <ul>
-                                                      <li>Email: <a href="mailto:info@jelajahsubang.com">info@jelajahsubang.com</a></li>
-                                                </ul>
-                                          </div>
-                                    </div>
-
-
-                              </div>
-
-                        </div>
-
-                        <p className="text-center text-sm text-zinc-500 mt-10">
-                              &copy; {new Date().getFullYear()} Jelajah Subang. All rights reserved.
-                        </p>
-                  </div>
-            </footer>
-      );
-};
-
-export default Footer;
+export default function Footer() {
+  return <footer className="bg-zinc-950 text-white"><div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"><div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <div><div className="flex items-center gap-3"><Image src="/images/logo.PNG" alt="Jelajah Subang" width={48} height={48} className="rounded-xl" /><span className="text-lg font-black">Jelajah Subang</span></div><p className="mt-4 max-w-sm text-sm leading-6 text-white/55">Portal untuk menemukan destinasi, cerita lokal, kuliner, dan produk kreatif dari Kabupaten Subang.</p><div className="mt-5 flex gap-2"><a href="https://www.instagram.com/jelajahsubang/" target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full border border-white/10 p-2.5 text-white/70 hover:bg-white/10"><Camera className="h-4 w-4" /></a><a href="https://www.youtube.com/@jelajahsubang" target="_blank" rel="noreferrer" aria-label="YouTube" className="rounded-full border border-white/10 p-2.5 text-white/70 hover:bg-white/10"><Video className="h-4 w-4" /></a><a href="mailto:info@jelajahsubang.com" aria-label="Email" className="rounded-full border border-white/10 p-2.5 text-white/70 hover:bg-white/10"><Mail className="h-4 w-4" /></a></div></div>
+    <div><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Jelajahi</h3><nav className="mt-4 space-y-3 text-sm text-white/65"><Link className="block hover:text-white" href="/destinasi">Destinasi</Link><Link className="block hover:text-white" href="/blog">Blog</Link><Link className="block hover:text-white" href="/shop">Shop</Link></nav></div>
+    <div><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Layanan</h3><nav className="mt-4 space-y-3 text-sm text-white/65"><Link className="block hover:text-white" href="/sharelok">Sharelok Kuliner</Link><Link className="block hover:text-white" href="/tentang">Tentang Kami</Link><Link className="block hover:text-white" href="/sharelok/admin">Login Admin</Link></nav></div>
+    <div><h3 className="text-xs font-black uppercase tracking-widest text-white/40">Mitra</h3><div className="mt-4 space-y-3 text-sm text-white/65"><a className="block hover:text-white" href="https://www.subangkab.go.id/" target="_blank" rel="noreferrer">Pemkab Subang</a><a className="block hover:text-white" href="https://www.disparbud.subangkab.go.id/" target="_blank" rel="noreferrer">Disparbud Subang</a></div></div>
+  </div><div className="flex flex-col gap-2 pt-6 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} Jelajah Subang. Semua hak dilindungi.</p><p>Dibuat untuk tumbuh bersama Subang.</p></div></div></footer>;
+}

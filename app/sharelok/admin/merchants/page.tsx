@@ -433,7 +433,7 @@ export default function AdminMerchantsPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.sortOrder}
+                    value={formData.sortOrder || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })
                     }

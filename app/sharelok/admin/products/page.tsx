@@ -423,7 +423,7 @@ export default function AdminProductsPage() {
                     required
                     min={0}
                     step={500}
-                    value={formData.costPrice}
+                    value={formData.costPrice || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, costPrice: parseInt(e.target.value) || 0 })
                     }
@@ -439,7 +439,7 @@ export default function AdminProductsPage() {
                     required
                     min={0}
                     step={500}
-                    value={formData.price}
+                    value={formData.price || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, price: parseInt(e.target.value) || 0 })
                     }
@@ -456,7 +456,7 @@ export default function AdminProductsPage() {
                 <label className="block font-semibold text-zinc-700 mb-1">Urutan Sort</label>
                 <input
                   type="number"
-                  value={formData.sortOrder}
+                  value={formData.sortOrder || ""}
                   onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
                   className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
                 />

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { LogIn, Menu } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 const navItems = [
   { label: "Blog", href: "/blog" },
   { label: "Destinasi", href: "/destinasi" },
-  { label: "Kuliner", href: "/kuliner" },
+  { label: "Kuliner", href: "/sharelok" },
   { label: "Shop", href: "/shop" },
   { label: "Tentang", href: "/tentang" },
 ];
@@ -68,6 +68,9 @@ export function Navbar() {
               <Link href={item.href}>{item.label}</Link>
             </Button>
           ))}
+          <Button asChild className={`ml-2 rounded-full px-5 font-bold ${isTransparent ? "bg-white text-emerald-900 hover:bg-white/90" : "bg-emerald-700 text-white hover:bg-emerald-800"}`}>
+            <Link href="/sharelok/admin"><LogIn className="h-4 w-4" />Login Admin</Link>
+          </Button>
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -97,6 +100,9 @@ export function Navbar() {
                     <Link href={item.href}>{item.label}</Link>
                   </Button>
                 ))}
+                <Button asChild className="mt-2 justify-start bg-emerald-700 text-white hover:bg-emerald-800">
+                  <Link href="/sharelok/admin"><LogIn className="h-4 w-4" />Login Admin / CMS</Link>
+                </Button>
               </nav>
             </SheetContent>
           </Sheet>

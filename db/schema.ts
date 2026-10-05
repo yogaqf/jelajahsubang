@@ -265,6 +265,31 @@ export const promoCodes = pgTable("promo_codes", {
 });
 
 // ==========================================
+// 11. PORTAL CMS CONTENT
+// ==========================================
+export const portalEntries = pgTable("portal_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  type: varchar("type", { length: 30 }).notNull(),
+  platform: varchar("platform", { length: 30 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  summary: text("summary"),
+  content: text("content"),
+  imageUrl: text("image_url"),
+  externalUrl: text("external_url"),
+  embedUrl: text("embed_url"),
+  location: varchar("location", { length: 255 }),
+  price: bigint("price", { mode: "number" }).default(0).notNull(),
+  isPublished: boolean("is_published").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("portal_entries_type_published_idx").on(table.type, table.isPublished, table.sortOrder),
+]);
+
+// ==========================================
 // RELATIONS
 // ==========================================
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -371,3 +396,5 @@ export type OrderStatusHistory = typeof orderStatusHistory.$inferSelect;
 export type DriverAssignmentHistory = typeof driverAssignmentHistory.$inferSelect;
 export type PromoCode = typeof promoCodes.$inferSelect;
 export type NewPromoCode = typeof promoCodes.$inferInsert;
+export type PortalEntry = typeof portalEntries.$inferSelect;
+export type NewPortalEntry = typeof portalEntries.$inferInsert;

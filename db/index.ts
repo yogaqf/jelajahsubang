@@ -35,6 +35,7 @@ export interface InMemoryStore {
   products: schema.Product[];
   drivers: schema.Driver[];
   promoCodes: schema.PromoCode[];
+  portalEntries: schema.PortalEntry[];
   orders: (schema.Order & {
     items: schema.OrderItem[];
     statusHistory: schema.OrderStatusHistory[];
@@ -532,6 +533,7 @@ export const store: InMemoryStore =
     products: initialProducts,
     drivers: initialDrivers,
     promoCodes: [],
+    portalEntries: [],
     orders: initialOrders,
   };
 

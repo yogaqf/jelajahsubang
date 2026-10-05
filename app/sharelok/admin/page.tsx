@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ShoppingBag,
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Database,
+  CalendarDays,
 } from "lucide-react";
 
 interface Stats {
@@ -44,6 +45,51 @@ function fmt(n: number) {
   return "Rp " + (n || 0).toLocaleString("id-ID");
 }
 
+type PeriodId = "all" | "today" | "yesterday" | "7d" | "30d" | "custom";
+
+const periodOptions: { id: PeriodId; label: string }[] = [
+  { id: "all", label: "All Time" },
+  { id: "today", label: "Hari Ini" },
+  { id: "yesterday", label: "Kemarin" },
+  { id: "7d", label: "7 Hari Terakhir" },
+  { id: "30d", label: "30 Hari Terakhir" },
+  { id: "custom", label: "Pilih Tanggal" },
+];
+
+const jakartaDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Jakarta",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function jakartaToday() {
+  return jakartaDateFormatter.format(new Date());
+}
+
+function shiftJakartaDate(value: string, days: number) {
+  const timestamp = new Date(`${value}T00:00:00+07:00`).getTime() + days * 86_400_000;
+  return jakartaDateFormatter.format(new Date(timestamp));
+}
+
+function periodQuery(period: PeriodId, customDate: string) {
+  if (period === "all") return "";
+  const today = jakartaToday();
+  const selectedDate = period === "custom" ? customDate || today : period === "yesterday" ? shiftJakartaDate(today, -1) : today;
+  const startDate = period === "7d"
+    ? shiftJakartaDate(today, -6)
+    : period === "30d"
+      ? shiftJakartaDate(today, -29)
+      : selectedDate;
+  const endDate = period === "yesterday" || period === "custom"
+    ? shiftJakartaDate(selectedDate, 1)
+    : shiftJakartaDate(today, 1);
+  return new URLSearchParams({
+    from: `${startDate}T00:00:00+07:00`,
+    to: `${endDate}T00:00:00+07:00`,
+  }).toString();
+}
+
 const statusBadgeColor: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-800 border-amber-200",
   CONFIRMED: "bg-blue-100 text-blue-800 border-blue-200",
@@ -58,13 +104,17 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<PeriodId>("all");
+  const [customDate, setCustomDate] = useState(jakartaToday);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const query = periodQuery(period, customDate);
+      const suffix = query ? `?${query}` : "";
       const [resStats, resOrders] = await Promise.all([
-        fetch("/api/sharelok/stats"),
-        fetch("/api/sharelok/orders"),
+        fetch(`/api/sharelok/stats${suffix}`),
+        fetch(`/api/sharelok/orders${suffix}`),
       ]);
       const dataStats = await resStats.json();
       const dataOrders = await resOrders.json();
@@ -75,11 +125,14 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [customDate, period]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const timer = window.setTimeout(() => loadData(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
+
+  const activePeriodLabel = periodOptions.find((item) => item.id === period)?.label || "All Time";
 
   return (
     <div className="space-y-6">
@@ -104,6 +157,18 @@ export default function AdminDashboardPage() {
           </button>
         </div>
       </div>
+
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><CalendarDays className="h-4 w-4" /></span><div><div className="text-xs font-black text-zinc-900">Filter Periode Dashboard</div><div className="text-[10px] text-zinc-400">Statistik dan pesanan terbaru mengikuti periode: <span className="font-bold text-emerald-700">{activePeriodLabel}</span></div></div></div>
+          <div className="flex flex-wrap items-center gap-2">
+            {periodOptions.map((option) => (
+              <button key={option.id} type="button" onClick={() => setPeriod(option.id)} className={`rounded-xl px-3 py-2 text-[11px] font-bold transition ${period === option.id ? "bg-emerald-700 text-white shadow-sm" : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-emerald-300 hover:text-emerald-700"}`}>{option.label}</button>
+            ))}
+            {period === "custom" && <input type="date" value={customDate} onChange={(event) => setCustomDate(event.target.value)} max={jakartaToday()} className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-emerald-100" />}
+          </div>
+        </div>
+      </section>
 
       {/* Database Integration Notice */}
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
@@ -137,7 +202,7 @@ export default function AdminDashboardPage() {
             {fmt(stats?.totalRevenue || 0)}
           </div>
           <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
-            <span>Dari pesanan yang selesai</span>
+            <span>Dari pesanan selesai · {activePeriodLabel}</span>
           </div>
         </div>
 
@@ -231,7 +296,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
           <div>
             <h3 className="text-base font-bold text-zinc-900">Pesanan Terbaru</h3>
-            <p className="text-xs text-zinc-500">Daftar transaksi terakhir yang masuk ke sistem</p>
+            <p className="text-xs text-zinc-500">Transaksi terakhir pada periode {activePeriodLabel}</p>
           </div>
           <Link
             href="/sharelok/admin/orders"

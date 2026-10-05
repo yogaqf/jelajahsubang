@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { getPortalEntries, getPortalEntryBySlug } from "@/lib/portal-db";
 
 const BLOG_DIR = path.join(process.cwd(), "content", "blog");
 
@@ -85,4 +86,35 @@ export function getBlogPostBySlug(slug: string): BlogPostDetail | null {
   const post = parsePostFromFile(file);
   if (!post.published) return null;
   return post;
+}
+
+export async function getManagedBlogPosts(): Promise<BlogPost[]> {
+  const entries = await getPortalEntries({ type: "BLOG", publishedOnly: true });
+  if (!entries.length) return getAllBlogPosts();
+  return entries.map((entry) => ({
+    title: entry.title,
+    slug: entry.slug,
+    excerpt: entry.summary || "",
+    date: entry.publishedAt.toISOString().slice(0, 10),
+    author: "Admin Jelajah Subang",
+    tags: ["Jelajah Subang"],
+    published: entry.isPublished,
+  }));
+}
+
+export async function getManagedBlogPostBySlug(slug: string): Promise<BlogPostDetail | null> {
+  const entry = await getPortalEntryBySlug(slug);
+  if (entry?.type === "BLOG" && entry.isPublished) {
+    return {
+      title: entry.title,
+      slug: entry.slug,
+      excerpt: entry.summary || "",
+      date: entry.publishedAt.toISOString().slice(0, 10),
+      author: "Admin Jelajah Subang",
+      tags: ["Jelajah Subang"],
+      published: true,
+      content: entry.content || entry.summary || "",
+    };
+  }
+  return getBlogPostBySlug(slug);
 }
