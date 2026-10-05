@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronRight, Loader2, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Loader2, MapPin, ShoppingBag } from "lucide-react";
 
 interface ServiceArea {
   id: string;
@@ -38,6 +38,10 @@ export default function SharelokPage() {
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-600 px-4 py-10 sm:py-16">
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-amber-300/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-emerald-300/15 blur-3xl" />
+      <Link href="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 sm:left-6 sm:top-6">
+        <ArrowLeft className="h-4 w-4" />
+        Jelajah Subang
+      </Link>
       <main className="relative mx-auto flex min-h-[calc(100vh-5rem)] max-w-4xl flex-col items-center justify-center text-center">
         <div className="mb-5 flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl font-black text-emerald-700 shadow-xl">S</div><h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">Share<span className="text-red-400">lok</span></h1></div>
         <p className="max-w-md text-sm leading-relaxed text-white/70 sm:text-base">Kuliner lokal pilihan, diantar sesuai cakupan area layananmu.</p>

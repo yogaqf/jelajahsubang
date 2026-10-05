@@ -13,6 +13,7 @@ export type BlogPost = {
   author: string;
   tags: string[];
   published: boolean;
+  imageUrl: string | null;
 };
 
 export type BlogPostDetail = BlogPost & {
@@ -33,6 +34,7 @@ function parsePostFromFile(file: string): BlogPostDetail {
     author: String(data.author ?? "Admin"),
     tags: Array.isArray(data.tags) ? data.tags.map((tag) => String(tag)) : [],
     published: Boolean(data.published ?? true),
+    imageUrl: data.image ? String(data.image) : null,
     content,
   };
 }
@@ -54,6 +56,7 @@ export function getLatestBlogPosts(limit: number = 3): BlogPost[] {
       author: post.author,
       tags: post.tags,
       published: post.published,
+      imageUrl: post.imageUrl,
     }));
 }
 
@@ -74,6 +77,7 @@ export function getAllBlogPosts(): BlogPost[] {
       author: post.author,
       tags: post.tags,
       published: post.published,
+      imageUrl: post.imageUrl,
     }));
 }
 
@@ -90,7 +94,6 @@ export function getBlogPostBySlug(slug: string): BlogPostDetail | null {
 
 export async function getManagedBlogPosts(): Promise<BlogPost[]> {
   const entries = await getPortalEntries({ type: "BLOG", publishedOnly: true });
-  if (!entries.length) return getAllBlogPosts();
   return entries.map((entry) => ({
     title: entry.title,
     slug: entry.slug,
@@ -99,6 +102,7 @@ export async function getManagedBlogPosts(): Promise<BlogPost[]> {
     author: "Admin Jelajah Subang",
     tags: ["Jelajah Subang"],
     published: entry.isPublished,
+    imageUrl: entry.imageUrl,
   }));
 }
 
@@ -113,8 +117,9 @@ export async function getManagedBlogPostBySlug(slug: string): Promise<BlogPostDe
       author: "Admin Jelajah Subang",
       tags: ["Jelajah Subang"],
       published: true,
+      imageUrl: entry.imageUrl,
       content: entry.content || entry.summary || "",
     };
   }
-  return getBlogPostBySlug(slug);
+  return null;
 }

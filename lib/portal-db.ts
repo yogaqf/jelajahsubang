@@ -1,5 +1,3 @@
-import "server-only";
-
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db, store } from "@/db";
 import { portalEntries, type NewPortalEntry, type PortalEntry } from "@/db/schema";

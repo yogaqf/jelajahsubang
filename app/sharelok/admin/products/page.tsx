@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   UtensilsCrossed,
   Plus,
@@ -23,6 +24,16 @@ function fmt(n: number) {
   return "Rp " + (n || 0).toLocaleString("id-ID");
 }
 
+const homepageBadgeOptions = ["Menu Baru", "Paling Laris", "Favorit", "Rekomendasi", "Promo"];
+const homepageBadgeColors = [
+  { value: "orange", label: "Oranye", className: "bg-orange-500 ring-orange-200" },
+  { value: "red", label: "Merah", className: "bg-red-500 ring-red-200" },
+  { value: "green", label: "Hijau", className: "bg-emerald-500 ring-emerald-200" },
+  { value: "blue", label: "Biru", className: "bg-blue-500 ring-blue-200" },
+  { value: "purple", label: "Ungu", className: "bg-purple-500 ring-purple-200" },
+  { value: "dark", label: "Gelap", className: "bg-zinc-800 ring-zinc-300" },
+];
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
@@ -44,6 +55,10 @@ export default function AdminProductsPage() {
     imageUrl: "",
     sortOrder: 0,
     isAvailable: true,
+    showOnHomepage: false,
+    homepagePosition: 1,
+    homepageBadge: "Menu Baru",
+    homepageBadgeColor: "green",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,7 +85,21 @@ export default function AdminProductsPage() {
   }
 
   useEffect(() => {
-    loadData();
+    let active = true;
+    Promise.all([
+      fetch("/api/sharelok/products"),
+      fetch("/api/sharelok/merchants"),
+      fetch("/api/sharelok/categories"),
+    ]).then(async ([resProd, resMerch, resCat]) => {
+      const [dataProd, dataMerch, dataCat] = await Promise.all([resProd.json(), resMerch.json(), resCat.json()]);
+      if (!active) return;
+      setProducts(Array.isArray(dataProd) ? dataProd : []);
+      setMerchants(Array.isArray(dataMerch) ? dataMerch : []);
+      setCategories(Array.isArray(dataCat) ? dataCat : []);
+    }).catch(console.error).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
   }, []);
 
   function handleOpenAdd() {
@@ -86,6 +115,10 @@ export default function AdminProductsPage() {
       imageUrl: "",
       sortOrder: products.length + 1,
       isAvailable: true,
+      showOnHomepage: false,
+      homepagePosition: 1,
+      homepageBadge: "Menu Baru",
+      homepageBadgeColor: "green",
     });
     setIsModalOpen(true);
   }
@@ -103,6 +136,10 @@ export default function AdminProductsPage() {
       imageUrl: p.imageUrl || "",
       sortOrder: p.sortOrder,
       isAvailable: p.isAvailable,
+      showOnHomepage: p.showOnHomepage,
+      homepagePosition: p.homepagePosition || 1,
+      homepageBadge: p.homepageBadge || "Menu Baru",
+      homepageBadgeColor: p.homepageBadgeColor || "orange",
     });
     setIsModalOpen(true);
   }
@@ -116,23 +153,26 @@ export default function AdminProductsPage() {
 
     setIsSubmitting(true);
     try {
+      let response: Response;
       if (editingId) {
-        await fetch("/api/sharelok/products", {
+        response = await fetch("/api/sharelok/products", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: editingId, ...formData }),
         });
       } else {
-        await fetch("/api/sharelok/products", {
+        response = await fetch("/api/sharelok/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
       }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Gagal menyimpan menu");
       setIsModalOpen(false);
       await loadData();
     } catch (e) {
-      console.error(e);
+      alert(e instanceof Error ? e.message : "Gagal menyimpan menu");
     } finally {
       setIsSubmitting(false);
     }
@@ -170,6 +210,9 @@ export default function AdminProductsPage() {
       p.category?.name.toLowerCase().includes(q)
     );
   });
+  const homepageConflict = formData.showOnHomepage
+    ? products.find((product) => product.id !== editingId && product.showOnHomepage && product.homepagePosition === formData.homepagePosition)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -225,13 +268,14 @@ export default function AdminProductsPage() {
                 <th className="px-4 py-3.5">Harga Jual</th>
                 <th className="px-4 py-3.5">Margin</th>
                 <th className="px-4 py-3.5">Ketersediaan</th>
+                <th className="px-4 py-3.5">Beranda</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-zinc-400">
                     <UtensilsCrossed className="mx-auto mb-2 h-8 w-8 text-zinc-300" />
                     Belum ada data menu kuliner.
                   </td>
@@ -242,9 +286,12 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         {p.imageUrl ? (
-                          <img
+                          <Image
                             src={p.imageUrl}
                             alt={p.name}
+                            width={40}
+                            height={40}
+                            unoptimized
                             className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
                           />
                         ) : (
@@ -296,6 +343,9 @@ export default function AdminProductsPage() {
                           </>
                         )}
                       </button>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {p.showOnHomepage ? <div className="space-y-1"><span className="inline-flex rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black text-orange-700">POSISI {p.homepagePosition}</span><div className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-500"><span className={`h-2.5 w-2.5 rounded-full ${homepageBadgeColors.find((color) => color.value === p.homepageBadgeColor)?.className.split(" ")[0] || "bg-orange-500"}`} />{p.homepageBadge}</div></div> : <span className="text-[11px] text-zinc-400">—</span>}
                     </td>
                     <td className="px-4 py-3.5 text-right space-x-1.5 whitespace-nowrap">
                       <button
@@ -486,6 +536,36 @@ export default function AdminProductsPage() {
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
                 />
+              </div>
+
+              <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.showOnHomepage}
+                    onChange={(e) => setFormData({ ...formData, showOnHomepage: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <span><strong className="block text-xs text-zinc-900">Tampilkan di beranda Jelajah Subang</strong><small className="mt-0.5 block leading-5 text-zinc-500">Maksimal tiga menu pilihan ditampilkan pada section Pesan Makanan.</small></span>
+                </label>
+
+                {formData.showOnHomepage && <div className="mt-4 space-y-3 border-t border-orange-200 pt-4">
+                  <div>
+                    <span className="mb-2 block font-semibold text-zinc-700">Posisi kartu</span>
+                    <div className="grid grid-cols-3 gap-2">{[1, 2, 3].map((position) => <button key={position} type="button" onClick={() => setFormData({ ...formData, homepagePosition: position })} className={`rounded-xl border px-3 py-2.5 font-black transition ${formData.homepagePosition === position ? "border-orange-500 bg-orange-500 text-white" : "border-orange-200 bg-white text-zinc-600 hover:border-orange-400"}`}>Posisi {position}</button>)}</div>
+                  </div>
+                  <div>
+                    <label htmlFor="homepage-badge" className="mb-1 block font-semibold text-zinc-700">Label kartu</label>
+                    <input id="homepage-badge" list="homepage-badge-options" maxLength={50} value={formData.homepageBadge} onChange={(e) => setFormData({ ...formData, homepageBadge: e.target.value })} placeholder="Contoh: Menu Baru" className="w-full rounded-xl border border-orange-200 bg-white p-2.5 text-xs text-zinc-800 focus:border-orange-500 focus:outline-none" />
+                    <datalist id="homepage-badge-options">{homepageBadgeOptions.map((label) => <option key={label} value={label} />)}</datalist>
+                    <p className="mt-1 text-[10px] leading-4 text-zinc-500">Pilih saran yang tersedia atau ketik label sendiri.</p>
+                  </div>
+                  <div>
+                    <span className="mb-2 block font-semibold text-zinc-700">Warna label</span>
+                    <div className="flex flex-wrap gap-2">{homepageBadgeColors.map((color) => <button key={color.value} type="button" onClick={() => setFormData({ ...formData, homepageBadgeColor: color.value })} aria-label={`Pilih warna ${color.label}`} className={`flex items-center gap-2 rounded-full border bg-white px-3 py-2 text-[10px] font-bold transition ${formData.homepageBadgeColor === color.value ? "border-zinc-900 text-zinc-900 shadow-sm" : "border-zinc-200 text-zinc-500 hover:border-zinc-400"}`}><span className={`h-3.5 w-3.5 rounded-full ring-2 ${color.className}`} />{color.label}</button>)}</div>
+                  </div>
+                  {homepageConflict && <p className="rounded-xl bg-amber-100 px-3 py-2 text-[11px] font-semibold leading-5 text-amber-800">Posisi {formData.homepagePosition} sedang dipakai “{homepageConflict.name}”. Menyimpan menu ini akan menggantikannya.</p>}
+                </div>}
               </div>
 
               <div className="flex items-center pt-2">

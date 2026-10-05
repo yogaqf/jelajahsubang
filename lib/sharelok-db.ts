@@ -1,6 +1,6 @@
 import { db, store, isDatabaseConfigured } from "@/db";
 import * as schema from "@/db/schema";
-import { and, desc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, ne } from "drizzle-orm";
 
 export { isDatabaseConfigured };
 
@@ -1173,6 +1173,23 @@ export async function deleteMerchant(id: string) {
 // ====================================================
 // 6. PRODUCTS
 // ====================================================
+function normalizeProductHomepage(data: Partial<schema.NewProduct>) {
+  const showOnHomepage = Boolean(data.showOnHomepage);
+  if (!showOnHomepage) {
+    return { showOnHomepage: false, homepagePosition: null, homepageBadge: null, homepageBadgeColor: null };
+  }
+
+  const homepagePosition = Number(data.homepagePosition);
+  if (![1, 2, 3].includes(homepagePosition)) {
+    throw new Error("Posisi menu beranda harus dipilih antara 1 sampai 3.");
+  }
+
+  const homepageBadge = String(data.homepageBadge || "Pilihan Hari Ini").trim().slice(0, 50);
+  const allowedColors = ["orange", "red", "green", "blue", "purple", "dark"];
+  const homepageBadgeColor = allowedColors.includes(String(data.homepageBadgeColor)) ? String(data.homepageBadgeColor) : "orange";
+  return { showOnHomepage: true, homepagePosition, homepageBadge: homepageBadge || "Pilihan Hari Ini", homepageBadgeColor };
+}
+
 export async function getProducts() {
   if (db && isDatabaseConfigured) {
     try {
@@ -1196,13 +1213,20 @@ export async function getProducts() {
 
 export async function createProduct(data: schema.NewProduct) {
   const now = new Date();
+  const homepage = normalizeProductHomepage(data);
   if (db && isDatabaseConfigured) {
     try {
-      const [item] = await db.insert(schema.products).values(data).returning();
+      if (homepage.showOnHomepage && homepage.homepagePosition) {
+        await db.update(schema.products).set({ showOnHomepage: false, homepagePosition: null }).where(eq(schema.products.homepagePosition, homepage.homepagePosition));
+      }
+      const [item] = await db.insert(schema.products).values({ ...data, ...homepage }).returning();
       return item;
     } catch (e) {
       console.error("Neon createProduct error:", e);
     }
+  }
+  if (homepage.showOnHomepage && homepage.homepagePosition) {
+    store.products = store.products.map((product) => product.homepagePosition === homepage.homepagePosition ? { ...product, showOnHomepage: false, homepagePosition: null } : product);
   }
   const item: schema.Product = {
     id: `p-${Date.now()}`,
@@ -1215,6 +1239,7 @@ export async function createProduct(data: schema.NewProduct) {
     price: data.price,
     imageUrl: data.imageUrl || null,
     isAvailable: data.isAvailable ?? true,
+    ...homepage,
     sortOrder: data.sortOrder ?? 0,
     createdAt: now,
     updatedAt: now,
@@ -1225,11 +1250,15 @@ export async function createProduct(data: schema.NewProduct) {
 
 export async function updateProduct(id: string, data: Partial<schema.NewProduct>) {
   const now = new Date();
+  const homepage: Partial<Pick<schema.NewProduct, "showOnHomepage" | "homepagePosition" | "homepageBadge" | "homepageBadgeColor">> = data.showOnHomepage === undefined ? {} : normalizeProductHomepage(data);
   if (db && isDatabaseConfigured) {
     try {
+      if (homepage.showOnHomepage && homepage.homepagePosition) {
+        await db.update(schema.products).set({ showOnHomepage: false, homepagePosition: null }).where(and(eq(schema.products.homepagePosition, homepage.homepagePosition), ne(schema.products.id, id)));
+      }
       const [updated] = await db
         .update(schema.products)
-        .set({ ...data, updatedAt: now })
+        .set({ ...data, ...homepage, updatedAt: now })
         .where(eq(schema.products.id, id))
         .returning();
       return updated;
@@ -1237,9 +1266,12 @@ export async function updateProduct(id: string, data: Partial<schema.NewProduct>
       console.error("Neon updateProduct error:", e);
     }
   }
+  if (homepage.showOnHomepage && homepage.homepagePosition) {
+    store.products = store.products.map((product) => product.id !== id && product.homepagePosition === homepage.homepagePosition ? { ...product, showOnHomepage: false, homepagePosition: null } : product);
+  }
   const idx = store.products.findIndex((p) => p.id === id);
   if (idx !== -1) {
-    store.products[idx] = { ...store.products[idx], ...data, updatedAt: now };
+    store.products[idx] = { ...store.products[idx], ...data, ...homepage, updatedAt: now };
     return store.products[idx];
   }
   return null;

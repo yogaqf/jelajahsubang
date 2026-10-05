@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   getProducts,
   createProduct,
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const created = await createProduct(body);
+    revalidatePath("/");
     return NextResponse.json(created, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed creating product";
@@ -32,6 +34,7 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { id, ...data } = body;
     const updated = await updateProduct(id, data);
+    revalidatePath("/");
     return NextResponse.json(updated);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed updating product";
@@ -45,6 +48,7 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
     await deleteProduct(id);
+    revalidatePath("/");
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed deleting product";

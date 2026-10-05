@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "homepage_badge_color" varchar(20);

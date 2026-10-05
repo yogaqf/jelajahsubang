@@ -24,7 +24,7 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled((current) => current ? window.scrollY > 64 : window.scrollY > 96);
     };
 
     handleScroll();
@@ -37,21 +37,25 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full ${isTransparent
-        ? "border-transparent bg-transparent"
-        : "border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur"
+      className={`sticky top-0 z-50 w-full transition-[background-color,box-shadow,backdrop-filter] duration-500 ease-out ${isTransparent
+        ? "bg-white/0 shadow-none backdrop-blur-none"
+        : "bg-white/95 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-md"
         }`}
     >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-4">
-        <div className="flex items-center gap-2">
-          <Image src="/images/logo.PNG" alt="Jelajah Subang" width={40} height={40} />
-          <Link
-            href="/"
-            className={`text-base font-semibold tracking-tight transition-colors duration-300 ${isTransparent ? "text-white" : "text-zinc-900"}`}
-          >
+      <div className={`mx-auto flex h-16 w-full min-w-0 max-w-7xl items-center justify-between gap-2 transition-[padding] duration-500 ease-out ${isTransparent ? "px-5 sm:px-8" : "px-3 sm:px-4"}`}>
+        <Link href="/" aria-label="Jelajah Subang" className="flex min-w-0 items-center gap-2">
+          <Image
+            src="/images/logo.PNG"
+            alt="Jelajah Subang"
+            width={126}
+            height={100}
+            priority
+            className={`shrink-0 object-contain transition-[width,height,transform] duration-500 ease-out ${isTransparent ? "h-28 w-[141px] translate-y-8 sm:h-32 sm:w-[161px]" : "h-10 w-[50px] translate-y-0"}`}
+          />
+          <span className={`overflow-hidden whitespace-nowrap text-base font-semibold tracking-tight transition-[max-width,opacity,transform,color] duration-500 ease-out ${isTransparent ? "max-w-0 -translate-x-2 opacity-0 text-white" : "max-w-40 translate-x-0 opacity-100 text-zinc-900"}`}>
             Jelajah Subang
-          </Link>
-        </div>
+          </span>
+        </Link>
 
 
         <nav className="hidden items-center gap-1 md:flex">

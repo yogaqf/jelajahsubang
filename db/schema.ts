@@ -11,8 +11,9 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ==========================================
 // ENUM
@@ -124,6 +125,10 @@ export const products = pgTable("products", {
   price: bigint("price", { mode: "number" }).notNull(),
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true).notNull(),
+  showOnHomepage: boolean("show_on_homepage").default(false).notNull(),
+  homepagePosition: integer("homepage_position"),
+  homepageBadge: varchar("homepage_badge", { length: 50 }),
+  homepageBadgeColor: varchar("homepage_badge_color", { length: 20 }),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -131,6 +136,8 @@ export const products = pgTable("products", {
   uniqueIndex("products_merchant_slug_unique").on(table.merchantId, table.slug),
   index("products_merchant_available_idx").on(table.merchantId, table.isAvailable),
   index("products_category_idx").on(table.categoryId),
+  uniqueIndex("products_homepage_position_unique").on(table.homepagePosition).where(sql`${table.showOnHomepage} = true`),
+  check("products_homepage_position_check", sql`${table.homepagePosition} is null or ${table.homepagePosition} between 1 and 3`),
 ]);
 
 // ==========================================
