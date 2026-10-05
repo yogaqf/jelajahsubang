@@ -31,6 +31,7 @@ export default async function Home() {
       imageUrl: product.imageUrl,
       merchantName: product.merchant?.name || "Mitra Sharelok",
       merchantSlug: product.merchant?.slug || "",
+      areaName: product.merchant?.area?.name || "Area belum ditentukan",
       badge: product.showOnHomepage ? product.homepageBadge || "Pilihan Hari Ini" : "Pilihan Hari Ini",
       badgeColor: product.showOnHomepage ? product.homepageBadgeColor || "orange" : "orange",
     }));

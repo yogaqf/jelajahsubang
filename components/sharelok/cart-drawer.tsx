@@ -37,7 +37,7 @@ export function CartDrawer() {
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number; description: string | null } | null>(null);
   const [error, setError] = useState("");
 
-  if (pathname?.startsWith("/sharelok/admin")) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   async function applyPromo() {
     if (!promoInput.trim() || promoLoading) return;

@@ -10,9 +10,9 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Category } from "@/db/schema";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -313,18 +313,13 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-zinc-700 mb-1">
-                  URL Gambar Banner / Icon
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
+              <ImageUploadField
+                value={formData.imageUrl}
+                onChange={(imageUrl) => setFormData((current) => ({ ...current, imageUrl }))}
+                folder="jelajah-subang/sharelok/kategori"
+                label="Gambar kategori"
+                helpText="Gunakan foto persegi agar ikon kategori tampil rapi. Maksimal 5 MB."
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

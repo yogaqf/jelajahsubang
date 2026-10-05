@@ -655,6 +655,105 @@ export interface OrderPaymentUpdate {
   paymentStatus?: string;
 }
 
+export interface OrderItemsUpdate {
+  productId: string;
+  quantity: number;
+}
+
+export async function updateOrderItems(orderId: string, rawItems: OrderItemsUpdate[]) {
+  const normalizedItems = rawItems
+    .map((item) => ({ productId: String(item.productId || ""), quantity: Math.floor(Number(item.quantity)) }))
+    .filter((item) => item.productId && item.quantity > 0 && item.quantity <= 99);
+  if (!normalizedItems.length) throw new Error("Pesanan harus memiliki minimal satu menu.");
+
+  const now = new Date();
+  const productIds = [...new Set(normalizedItems.map((item) => item.productId))];
+  const order = db && isDatabaseConfigured
+    ? await db.query.orders.findFirst({ where: eq(schema.orders.id, orderId) })
+    : store.orders.find((item) => item.id === orderId);
+  if (!order) throw new Error("Pesanan tidak ditemukan.");
+  if (order.paymentStatus === "PAID") throw new Error("Menu tidak dapat diubah setelah pembayaran diverifikasi.");
+  if (["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(order.status)) {
+    throw new Error("Menu tidak dapat diubah pada tahap pesanan ini.");
+  }
+
+  const products = db && isDatabaseConfigured
+    ? await db.query.products.findMany({ where: inArray(schema.products.id, productIds) })
+    : store.products.filter((product) => productIds.includes(product.id));
+  if (products.length !== productIds.length) throw new Error("Ada menu pengganti yang tidak ditemukan.");
+  if (products.some((product) => product.merchantId !== order.merchantId)) {
+    throw new Error("Menu pengganti harus berasal dari mitra yang sama.");
+  }
+
+  const quantityByProduct = new Map(normalizedItems.map((item) => [item.productId, item.quantity]));
+  const pricedItems = products.map((product) => {
+    const quantity = quantityByProduct.get(product.id) || 0;
+    return {
+      productId: product.id,
+      productName: product.name,
+      costPrice: Number(product.costPrice),
+      price: Number(product.price),
+      quantity,
+      subtotal: Number(product.price) * quantity,
+    };
+  });
+  const subtotal = pricedItems.reduce((sum, item) => sum + item.subtotal, 0);
+  let discount = 0;
+  let promoCode = order.promoCode;
+  if (promoCode) {
+    const promo = db && isDatabaseConfigured
+      ? await db.query.promoCodes.findFirst({ where: eq(schema.promoCodes.code, promoCode) })
+      : store.promoCodes.find((item) => item.code === promoCode);
+    if (promo && promo.isActive && new Date(promo.expiresAt).getTime() > Date.now() && subtotal >= Number(promo.minOrder)) {
+      discount = promo.discountType === "FIXED"
+        ? Number(promo.discountValue)
+        : Math.floor(subtotal * Number(promo.discountValue) / 100);
+      if (promo.discountType === "PERCENT" && Number(promo.maxDiscount) > 0) {
+        discount = Math.min(discount, Number(promo.maxDiscount));
+      }
+      discount = Math.max(0, Math.min(subtotal, discount));
+    } else {
+      promoCode = null;
+    }
+  }
+  const total = Math.max(0, subtotal + Number(order.deliveryFee) - discount);
+
+  if (db && isDatabaseConfigured) {
+    await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
+    await db.insert(schema.orderItems).values(pricedItems.map((item) => ({ ...item, orderId, createdAt: now })));
+    await db.update(schema.orders).set({
+      subtotal,
+      discount,
+      total,
+      promoCode,
+      status: "WAITING_CONFIRMATION",
+      paymentStatus: "PENDING",
+      updatedAt: now,
+    }).where(eq(schema.orders.id, orderId));
+    await db.insert(schema.orderStatusHistory).values({
+      orderId,
+      status: "WAITING_CONFIRMATION",
+      note: "Rincian menu diubah admin. Total pesanan dihitung ulang dan menunggu konfirmasi customer.",
+      createdAt: now,
+    });
+  } else {
+    const memoryOrder = store.orders.find((item) => item.id === orderId)!;
+    memoryOrder.items = pricedItems.map((item) => ({ ...item, id: crypto.randomUUID(), orderId, createdAt: now }));
+    memoryOrder.subtotal = subtotal;
+    memoryOrder.discount = discount;
+    memoryOrder.total = total;
+    memoryOrder.promoCode = promoCode;
+    memoryOrder.status = "WAITING_CONFIRMATION";
+    memoryOrder.paymentStatus = "PENDING";
+    memoryOrder.updatedAt = now;
+    memoryOrder.statusHistory.unshift({
+      id: crypto.randomUUID(), orderId, status: "WAITING_CONFIRMATION",
+      note: "Rincian menu diubah admin. Total pesanan dihitung ulang dan menunggu konfirmasi customer.", createdAt: now,
+    });
+  }
+  return { subtotal, discount, total, promoCode };
+}
+
 export async function updateOrderPaymentDetails(orderId: string, data: OrderPaymentUpdate) {
   const now = new Date();
   const deliveryFee = Math.max(0, Math.floor(Number(data.deliveryFee ?? 0)));
@@ -1206,7 +1305,15 @@ export async function getProducts() {
   }
   return store.products.map((p) => ({
     ...p,
-    merchant: store.merchants.find((m) => m.id === p.merchantId) || null,
+    merchant: (() => {
+      const merchant = store.merchants.find((m) => m.id === p.merchantId);
+      return merchant
+        ? {
+            ...merchant,
+            area: store.serviceAreas.find((area) => area.id === merchant.areaId) || null,
+          }
+        : null;
+    })(),
     category: store.categories.find((c) => c.id === p.categoryId) || null,
   }));
 }

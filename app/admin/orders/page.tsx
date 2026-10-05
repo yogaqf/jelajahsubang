@@ -14,6 +14,9 @@ import {
   Trash2,
   AlertTriangle,
   ExternalLink,
+  Pencil,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 interface Order {
@@ -52,6 +55,7 @@ interface Order {
   driver?: { name: string; phone?: string; whatsapp?: string; vehiclePlate?: string; commissionPercent?: number } | null;
   items?: {
     id: string;
+    productId: string | null;
     productName: string;
     costPrice: number;
     price: number;
@@ -84,6 +88,23 @@ interface DriverOption {
   vehiclePlate?: string;
   commissionPercent: number;
   isActive: boolean;
+}
+
+interface ProductOption {
+  id: string;
+  merchantId: string;
+  name: string;
+  costPrice: number;
+  price: number;
+  isAvailable: boolean;
+}
+
+interface EditableOrderItem {
+  productId: string;
+  productName: string;
+  costPrice: number;
+  price: number;
+  quantity: number;
 }
 
 function fmt(n: number) {
@@ -136,8 +157,8 @@ const workflowLanes = [
     tone: "emerald",
     steps: [
       { number: 1, label: "Kirim pesanan", detail: "Order masuk" },
-      { number: 3, label: "Konfirmasi menu & ongkir", detail: "Customer setuju" },
-      { number: 4, label: "Pembayaran", detail: "QRIS / COD" },
+      { number: 3, label: "Konfirmasi menu & ongkir", detail: "Revisi bila perlu" },
+      { number: 4, label: "Pembayaran", detail: "QRIS / transfer" },
       { number: 9, label: "Terima pesanan", detail: "Order selesai" },
     ],
   },
@@ -163,8 +184,8 @@ const workflowLanes = [
 function completedWorkflowSteps(order: Order) {
   const completed = new Set<number>([1]);
   if (["ACCEPTED", "PREPARING", "READY"].includes(order.merchantStatus)) completed.add(2);
-  if (["CONFIRMED", "PREPARING", "READY", "DELIVERING", "COMPLETED"].includes(order.status)) completed.add(3);
-  if (order.paymentMethod === "COD" || order.paymentStatus === "PAID") completed.add(4);
+  if (["CONTACTED", "CONFIRMED", "PREPARING", "READY", "DELIVERING", "COMPLETED"].includes(order.status)) completed.add(3);
+  if (order.paymentStatus === "PAID") completed.add(4);
   if (["PREPARING", "READY", "DELIVERING", "COMPLETED"].includes(order.status)) completed.add(5);
   if (order.driverId) completed.add(6);
   if (["READY", "DELIVERING", "COMPLETED"].includes(order.status)) completed.add(7);
@@ -183,14 +204,11 @@ function adminFocus(order: Order) {
   if (!["ACCEPTED", "PREPARING", "READY"].includes(order.merchantStatus)) {
     return { step: 2, title: order.merchantStatus === "CONTACTED" ? "Konfirmasi hasil cek menu" : "Hubungi mitra untuk cek menu", detail: "Pastikan semua menu tersedia dan minta estimasi waktu selesai." };
   }
-  if (!order.paymentMethod || order.paymentMethod === "Belum disepakati") {
-    return { step: 3, title: "Konfirmasi menu dan ongkir", detail: "Isi ongkir dan metode pembayaran, lalu kirim total ke customer." };
+  if (!["CONTACTED", "CONFIRMED", "PREPARING", "READY", "DELIVERING"].includes(order.status)) {
+    return { step: 3, title: "Konfirmasi menu dan ongkir", detail: "Edit menu bila diperlukan, isi ongkir, lalu kirim total dan instruksi pembayaran." };
   }
-  if (!["CONFIRMED", "PREPARING", "READY", "DELIVERING"].includes(order.status)) {
-    return { step: 3, title: "Konfirmasi menu dan ongkir", detail: "Kirim ketersediaan menu beserta ongkir melalui WhatsApp dan catat persetujuan customer." };
-  }
-  if (order.paymentMethod !== "COD" && order.paymentStatus !== "PAID") {
-    return { step: 4, title: "Verifikasi pembayaran", detail: "Pastikan dana QRIS/transfer sudah masuk sebelum mitra mulai menyiapkan." };
+  if (order.paymentStatus !== "PAID") {
+    return { step: 4, title: "Verifikasi pembayaran", detail: "Cek dana masuk, pilih QRIS atau transfer bank, lalu tandai lunas." };
   }
   if (order.status === "CONFIRMED") {
     return { step: 5, title: "Minta mitra mulai menyiapkan", detail: "Mitra mulai memasak setelah pembayaran aman." };
@@ -239,6 +257,7 @@ function WhatsAppIcon({ className = "" }: { className?: string }) {
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -246,6 +265,7 @@ export default function AdminOrdersPage() {
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [editingItems, setEditingItems] = useState<EditableOrderItem[] | null>(null);
 
   // Driver assign modal
   const [assigningOrder, setAssigningOrder] = useState<Order | null>(null);
@@ -255,7 +275,7 @@ export default function AdminOrdersPage() {
   const [actionError, setActionError] = useState("");
   const [pricingForm, setPricingForm] = useState<{ deliveryFee: number | ""; paymentMethod: string }>({
     deliveryFee: "",
-    paymentMethod: "QRIS",
+    paymentMethod: "",
   });
 
   async function fetchOrderDetail(orderId: string) {
@@ -273,7 +293,7 @@ export default function AdminOrdersPage() {
       setSelectedOrder(detail);
       setPricingForm({
         deliveryFee: Number(detail.deliveryFee || 0) > 0 ? Number(detail.deliveryFee) : "",
-        paymentMethod: detail.paymentMethod && detail.paymentMethod !== "Belum disepakati" ? detail.paymentMethod : "QRIS",
+        paymentMethod: detail.paymentMethod && detail.paymentMethod !== "Belum disepakati" ? detail.paymentMethod : "",
       });
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Gagal memuat detail pesanan");
@@ -289,17 +309,20 @@ export default function AdminOrdersPage() {
       if (selectedStatus !== "ALL") q.set("status", selectedStatus);
       if (search) q.set("search", search);
 
-      const [resOrders, resDrivers, refreshedDetail] = await Promise.all([
+      const [resOrders, resDrivers, resProducts, refreshedDetail] = await Promise.all([
         fetch(`/api/sharelok/orders?${q.toString()}`),
         drivers.length === 0 ? fetch("/api/sharelok/drivers") : Promise.resolve(null),
+        products.length === 0 ? fetch("/api/sharelok/products") : Promise.resolve(null),
         selectedOrder ? fetchOrderDetail(selectedOrder.id) : Promise.resolve(null),
       ]);
 
       const dataOrders = await resOrders.json();
       const dataDrivers = resDrivers ? await resDrivers.json() : null;
+      const dataProducts = resProducts ? await resProducts.json() : null;
 
       setOrders(Array.isArray(dataOrders) ? dataOrders : []);
       if (Array.isArray(dataDrivers)) setDrivers(dataDrivers);
+      if (Array.isArray(dataProducts)) setProducts(dataProducts);
       if (refreshedDetail) setSelectedOrder(refreshedDetail);
     } catch (err) {
       console.error(err);
@@ -382,6 +405,65 @@ export default function AdminOrdersPage() {
       .join("\n");
   }
 
+  function openItemEditor(order: Order) {
+    if (order.paymentStatus === "PAID") {
+      setActionError("Menu tidak dapat diedit setelah pembayaran diverifikasi.");
+      return;
+    }
+    setEditingItems((order.items || []).filter((item) => item.productId).map((item) => ({
+      productId: item.productId!,
+      productName: item.productName,
+      costPrice: item.costPrice,
+      price: item.price,
+      quantity: item.quantity,
+    })));
+    setActionError("");
+  }
+
+  function addReplacementItem(productId: string) {
+    if (!productId || !selectedOrder) return;
+    const product = products.find((item) => item.id === productId && item.merchantId === selectedOrder.merchantId);
+    if (!product) return;
+    setEditingItems((current) => {
+      const items = current || [];
+      const existing = items.find((item) => item.productId === productId);
+      if (existing) return items.map((item) => item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...items, { productId: product.id, productName: product.name, costPrice: Number(product.costPrice), price: Number(product.price), quantity: 1 }];
+    });
+  }
+
+  function changeEditedQuantity(productId: string, delta: number) {
+    setEditingItems((current) => (current || [])
+      .map((item) => item.productId === productId ? { ...item, quantity: item.quantity + delta } : item)
+      .filter((item) => item.quantity > 0));
+  }
+
+  async function saveEditedItems() {
+    if (!selectedOrder || !editingItems?.length) {
+      setActionError("Pesanan harus memiliki minimal satu menu.");
+      return;
+    }
+    setIsSubmitting(true);
+    setActionError("");
+    try {
+      const response = await fetch(`/api/sharelok/orders/${selectedOrder.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: editingItems.map((item) => ({ productId: item.productId, quantity: item.quantity })) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Gagal menyimpan perubahan menu");
+      const refreshed = await fetchOrderDetail(selectedOrder.id);
+      setSelectedOrder(refreshed);
+      setEditingItems(null);
+      await loadData();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Gagal menyimpan perubahan menu");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSavePricing(order: Order) {
     setIsSubmitting(true);
     setActionError("");
@@ -391,7 +473,6 @@ export default function AdminOrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           deliveryFee: Number(pricingForm.deliveryFee),
-          paymentMethod: pricingForm.paymentMethod,
           paymentStatus: order.paymentStatus === "PAID" ? "PAID" : "PENDING",
         }),
       });
@@ -419,15 +500,21 @@ export default function AdminOrdersPage() {
     const total = order.subtotal + deliveryFee - order.discount;
     openWhatsApp(
       order.customerPhone,
-      `Halo Kak ${order.customerName} 👋\nMenu pesanan *${order.orderNumber}* tersedia!\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nBalas *SETUJU* untuk konfirmasi menu dan ongkir, lalu lanjut pembayaran ${pricingForm.paymentMethod === "COD" ? "COD" : "melalui QRIS"} ya 🙏\n\nPantau pesanan:\n${trackingUrl(order)}`
+      `Halo Kak ${order.customerName} 👋\nPesanan *${order.orderNumber}* sudah dikonfirmasi.\n\n${orderSummary(order)}\n\nSubtotal: ${fmt(order.subtotal)}\nOngkir: ${fmt(deliveryFee)}\n${order.discount > 0 ? `Promo: -${fmt(order.discount)}\n` : ""}*Total: ${fmt(total)}*\n\nPembayaran tersedia melalui *QRIS* atau *transfer bank*. Nomor rekening dan gambar QRIS kami kirim setelah pesan ini. Setelah bayar, kirim bukti transfer di sini ya 🙏\n\nPantau pesanan:\n${trackingUrl(order)}`
     );
     await handleSavePricing(order);
     if (order.status === "WAITING_CONFIRMATION" || order.status === "PENDING") {
-      await handleUpdateStatus(order.id, "CONTACTED", "Rincian total dan instruksi pembayaran QRIS dikirim ke customer");
+      await handleUpdateStatus(order.id, "CONTACTED", "Rincian menu, total, dan instruksi pembayaran dikirim ke customer");
     }
   }
 
   async function handleMarkPaid(order: Order) {
+    if (!pricingForm.paymentMethod) {
+      const message = "Pilih metode pembayaran yang benar-benar digunakan customer sebelum verifikasi.";
+      setActionError(message);
+      window.alert(message);
+      return;
+    }
     setIsSubmitting(true);
     setActionError("");
     try {
@@ -437,6 +524,11 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ paymentMethod: pricingForm.paymentMethod, paymentStatus: "PAID" }),
       });
       if (!response.ok) throw new Error("Gagal memperbarui pembayaran");
+      await fetch(`/api/sharelok/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CONFIRMED", note: `Pembayaran ${pricingForm.paymentMethod === "QRIS" ? "QRIS" : "transfer bank"} telah diverifikasi admin` }),
+      });
       await loadData();
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Gagal memperbarui pembayaran");
@@ -448,9 +540,9 @@ export default function AdminOrdersPage() {
   function nextStepLabel(order: Order) {
     const step = adminFocus(order).step;
     if (step === 2) return order.merchantStatus === "CONTACTED" ? "Next · Menu tersedia" : "Next · Cek menu ke mitra";
-    if (step === 3) return !order.paymentMethod || order.paymentMethod === "Belum disepakati" ? "Next · Kirim menu & ongkir" : "Next · Customer setuju";
-    if (step === 4) return order.paymentMethod === "COD" ? "Next · Konfirmasi COD" : "Next · Pembayaran lunas";
-    if (step === 5) return "Next · Mulai disiapkan";
+    if (step === 3) return "Next · Kirim tagihan & pembayaran";
+    if (step === 4) return "Next · Verifikasi pembayaran";
+    if (step === 5) return "Next · Hubungi mitra mulai masak";
     if (step === 6) return order.driverAssignments?.some((item) => item.status === "OFFERED") ? "Menunggu jawaban driver" : "Next · Pilih driver";
     if (step === 7) return "Next · Pickup ready";
     if (step === 8) return "Next · Mulai diantar";
@@ -470,11 +562,10 @@ export default function AdminOrdersPage() {
         window.alert(message);
         return;
       }
-      if (!order.paymentMethod || order.paymentMethod === "Belum disepakati") return handleSendInvoice(order);
-      return handleUpdateStatus(order.id, "CONFIRMED", "Customer menyetujui total pesanan");
+      return handleSendInvoice(order);
     }
     if (step === 4) return handleMarkPaid(order);
-    if (step === 5) return handleMerchantStatus(order.id, "PREPARING");
+    if (step === 5) return handleStartPreparing(order);
     if (step === 6) {
       if (order.driverAssignments?.some((item) => item.status === "OFFERED")) return;
       setAssigningOrder(order); setSelectedDriverId(""); setActionError("");
@@ -490,7 +581,6 @@ export default function AdminOrdersPage() {
     if (
       merchantStatus === "PREPARING" &&
       order &&
-      order.paymentMethod !== "COD" &&
       order.paymentStatus !== "PAID"
     ) {
       setActionError("Pembayaran harus lunas sebelum mitra diminta mulai menyiapkan pesanan.");
@@ -508,6 +598,18 @@ export default function AdminOrdersPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleStartPreparing(order: Order) {
+    if (order.paymentStatus !== "PAID") {
+      setActionError("Pembayaran harus diverifikasi sebelum mitra diminta mulai memasak.");
+      return;
+    }
+    openWhatsApp(
+      order.merchant?.whatsapp || order.merchant?.phone,
+      `Halo Kak 👋 Pembayaran order *${order.orderNumber}* sudah terverifikasi.\n\n${orderSummary(order)}\n\nSilakan mulai disiapkan. Kabari kami jika pesanan sudah siap dijemput ya 🙏`
+    );
+    await handleMerchantStatus(order.id, "PREPARING");
   }
 
   async function handleContactMerchant(order: Order) {
@@ -546,7 +648,7 @@ export default function AdminOrdersPage() {
     setIsSubmitting(true);
     setActionError("");
     try {
-      if (assigningOrder.paymentMethod !== "COD" && assigningOrder.paymentStatus !== "PAID") {
+      if (assigningOrder.paymentStatus !== "PAID") {
         throw new Error("Pembayaran harus lunas sebelum order ditawarkan ke driver.");
       }
       if (!["PREPARING", "READY"].includes(assigningOrder.status)) {
@@ -800,7 +902,7 @@ export default function AdminOrdersPage() {
                       })}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3"><button onClick={() => handleUpdateStatus(selectedOrder.id, "CANCELLED", "Pesanan dibatalkan oleh admin")} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status)} className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 disabled:hidden">Batalkan</button>{(() => { const usesWhatsApp = (focus.step === 2 && selectedOrder.merchantStatus !== "CONTACTED") || (focus.step === 3 && (!selectedOrder.paymentMethod || selectedOrder.paymentMethod === "Belum disepakati")); return <button onClick={() => handleNextStep(selectedOrder)} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status) || (focus.step === 6 && Boolean(selectedOrder.driverAssignments?.some((item) => item.status === "OFFERED")))} className={`ml-auto inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${usesWhatsApp ? "bg-[#25D366] hover:bg-[#20bd5a]" : "bg-zinc-950 hover:bg-zinc-800"}`}>{usesWhatsApp && <WhatsAppIcon className="h-4 w-4" />}{isSubmitting ? "Memproses..." : nextStepLabel(selectedOrder)} →</button>; })()}</div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3"><button onClick={() => handleUpdateStatus(selectedOrder.id, "CANCELLED", "Pesanan dibatalkan oleh admin")} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status)} className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 disabled:hidden">Batalkan</button>{(() => { const usesWhatsApp = (focus.step === 2 && selectedOrder.merchantStatus !== "CONTACTED") || focus.step === 3 || focus.step === 5; return <button onClick={() => handleNextStep(selectedOrder)} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status) || (focus.step === 6 && Boolean(selectedOrder.driverAssignments?.some((item) => item.status === "OFFERED")))} className={`ml-auto inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${usesWhatsApp ? "bg-[#25D366] hover:bg-[#20bd5a]" : "bg-zinc-950 hover:bg-zinc-800"}`}>{usesWhatsApp && <WhatsAppIcon className="h-4 w-4" />}{isSubmitting ? "Memproses..." : nextStepLabel(selectedOrder)} →</button>; })()}</div>
                 </section>
               );
             })()}
@@ -872,9 +974,10 @@ export default function AdminOrdersPage() {
 
             {/* Order Items Table */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">
-                Item Makanan Dipesan
-              </h4>
+              <div className="flex items-center justify-between gap-3">
+                <div><h4 className="text-xs font-bold uppercase tracking-wider text-zinc-800">Item Makanan Dipesan</h4><p className="mt-1 text-[10px] text-zinc-500">Jika ada menu kosong, edit sesuai persetujuan customer sebelum mengirim tagihan.</p></div>
+                <button type="button" onClick={() => openItemEditor(selectedOrder)} disabled={selectedOrder.paymentStatus === "PAID" || ["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-black text-orange-700 hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"><Pencil className="h-3.5 w-3.5" />Edit menu</button>
+              </div>
               <div className="rounded-xl border border-zinc-200 divide-y divide-zinc-100">
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (
                   selectedOrder.items.map((item) => (
@@ -928,11 +1031,11 @@ export default function AdminOrdersPage() {
                   {Number(pricingForm.deliveryFee) <= 0 && <span className="block text-[9px] font-semibold text-red-600">Wajib diisi sebelum Next</span>}
                 </label>
                 <label className="space-y-1 text-[11px] font-semibold text-zinc-600">
-                  <span>Pembayaran</span>
+                  <span>Metode yang sudah dibayar</span>
                   <select value={pricingForm.paymentMethod} onChange={(event) => setPricingForm({ ...pricingForm, paymentMethod: event.target.value })} className="w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none">
+                    <option value="">Pilih setelah cek pembayaran</option>
                     <option value="QRIS">QRIS</option>
                     <option value="BANK_TRANSFER">Transfer Bank</option>
-                    <option value="COD">COD</option>
                   </select>
                 </label>
               </div>
@@ -957,7 +1060,7 @@ export default function AdminOrdersPage() {
                   })}
                 </div>
               </div>
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-semibold text-blue-700">Isi rincian di atas, lalu gunakan tombol Next pada alur pesanan untuk menyimpan dan melanjutkan.</div>
+              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-semibold text-blue-700">Isi ongkir lalu kirim tagihan. Setelah customer mengirim bukti dan dana sudah dicek, pilih metode yang digunakan lalu tekan Verifikasi pembayaran.</div>
               <div className="border-t border-zinc-200 pt-3" />
               <div className="flex justify-between text-zinc-600">
                 <span>Subtotal Menu:</span>
@@ -1019,6 +1122,41 @@ export default function AdminOrdersPage() {
                 <Trash2 className="h-3.5 w-3.5" /> Hapus pesanan
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedOrder && editingItems && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-zinc-100 pb-4">
+              <div><p className="text-[10px] font-black uppercase tracking-widest text-orange-600">Revisi Pesanan</p><h3 className="mt-1 text-lg font-black text-zinc-900">Edit menu {selectedOrder.orderNumber}</h3><p className="mt-1 text-xs text-zinc-500">Hapus menu kosong, ubah jumlah, atau tambahkan menu pengganti dari mitra yang sama.</p></div>
+              <button type="button" onClick={() => setEditingItems(null)} className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {editingItems.map((item) => <div key={item.productId} className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
+                <div className="min-w-0 flex-1"><div className="truncate text-xs font-black text-zinc-900">{item.productName}</div><div className="mt-0.5 text-[10px] text-zinc-500">{fmt(item.price)} per item</div></div>
+                <div className="flex items-center gap-1 rounded-lg bg-zinc-100 p-1">
+                  <button type="button" onClick={() => changeEditedQuantity(item.productId, -1)} aria-label={`Kurangi ${item.productName}`} className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-zinc-700 shadow-sm"><Minus className="h-3.5 w-3.5" /></button>
+                  <strong className="w-8 text-center text-xs">{item.quantity}</strong>
+                  <button type="button" onClick={() => changeEditedQuantity(item.productId, 1)} aria-label={`Tambah ${item.productName}`} className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-white"><Plus className="h-3.5 w-3.5" /></button>
+                </div>
+                <strong className="w-24 text-right text-xs text-emerald-700">{fmt(item.price * item.quantity)}</strong>
+              </div>)}
+              {!editingItems.length && <div className="rounded-xl border border-dashed border-red-200 bg-red-50 p-5 text-center text-xs font-semibold text-red-700">Semua menu terhapus. Tambahkan minimal satu menu pengganti.</div>}
+            </div>
+
+            <label className="mt-4 block text-xs font-bold text-zinc-700">Tambah menu pengganti
+              <select value="" onChange={(event) => addReplacementItem(event.target.value)} className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs font-semibold text-zinc-800 outline-none focus:border-orange-400">
+                <option value="">Pilih menu dari {selectedOrder.merchant?.name || "mitra"}</option>
+                {products.filter((product) => product.merchantId === selectedOrder.merchantId && product.isAvailable && !editingItems.some((item) => item.productId === product.id)).map((product) => <option key={product.id} value={product.id}>{product.name} — {fmt(Number(product.price))}</option>)}
+              </select>
+            </label>
+
+            <div className="mt-4 rounded-xl bg-zinc-950 p-4 text-white"><div className="flex items-center justify-between text-xs"><span>Subtotal baru</span><strong className="text-base text-orange-300">{fmt(editingItems.reduce((sum, item) => sum + item.price * item.quantity, 0))}</strong></div><p className="mt-1 text-[10px] text-white/60">Promo dan total akhir akan dihitung ulang saat disimpan.</p></div>
+            {actionError && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{actionError}</div>}
+            <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingItems(null)} disabled={isSubmitting} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-600">Batal</button><button type="button" onClick={saveEditedItems} disabled={isSubmitting || editingItems.length === 0} className="rounded-xl bg-orange-600 px-4 py-2.5 text-xs font-black text-white hover:bg-orange-700 disabled:opacity-40">{isSubmitting ? "Menyimpan..." : "Simpan & hitung ulang"}</button></div>
           </div>
         </div>
       )}

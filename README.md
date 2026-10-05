@@ -16,6 +16,30 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Cloudinary image uploads
+
+Admin forms upload images directly to Cloudinary using a short-lived server-generated signature. Copy `.env.example` to `.env` and fill these values from **Cloudinary Console > Settings > API Keys**:
+
+```bash
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+```
+
+Never expose `CLOUDINARY_API_SECRET` with a `NEXT_PUBLIC_` prefix. Restart the development server after changing environment variables.
+
+## Admin authentication
+
+The dashboard is available at `/admin` and requires a signed server-side session. Configure these values in `.env` locally and in the deployment environment:
+
+```bash
+ADMIN_EMAIL="admin@jelajahsubang.com"
+ADMIN_PASSWORD="use-a-strong-password"
+ADMIN_SESSION_SECRET="use-at-least-32-random-characters"
+```
+
+The password must contain at least 10 characters. Keep all three variables server-only and never prefix them with `NEXT_PUBLIC_`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

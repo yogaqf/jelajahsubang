@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { Product, Merchant, Category } from "@/db/schema";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 
 interface ProductWithRelations extends Product {
   merchant?: Merchant | null;
@@ -525,18 +526,13 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-zinc-700 mb-1">
-                  URL Foto Menu
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
+              <ImageUploadField
+                value={formData.imageUrl}
+                onChange={(imageUrl) => setFormData((current) => ({ ...current, imageUrl }))}
+                folder="jelajah-subang/sharelok/menu"
+                label="Foto menu"
+                helpText="Gunakan foto persegi agar kartu menu tampil rapi. Maksimal 5 MB."
+              />
 
               <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4">
                 <label className="flex cursor-pointer items-start gap-3">

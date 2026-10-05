@@ -6,6 +6,7 @@ import {
   respondToDriverOffer,
   updateMerchantOrderStatus,
   updateOrderPaymentDetails,
+  updateOrderItems,
   updateOrderStatus,
   updateOrderArea,
   deleteOrder,
@@ -61,6 +62,10 @@ export async function PATCH(
 
     if (body.historyNote) {
       await addOrderHistoryNote(id, String(body.historyNote));
+    }
+
+    if (Array.isArray(body.items)) {
+      await updateOrderItems(id, body.items);
     }
 
     if (

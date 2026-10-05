@@ -15,6 +15,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { Merchant, ServiceArea } from "@/db/schema";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 
 type MerchantWithArea = Merchant & { area?: ServiceArea | null };
 
@@ -413,18 +414,13 @@ export default function AdminMerchantsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-zinc-700 mb-1">
-                  URL Foto Banner / Profil
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
+              <ImageUploadField
+                value={formData.imageUrl}
+                onChange={(imageUrl) => setFormData((current) => ({ ...current, imageUrl }))}
+                folder="jelajah-subang/sharelok/merchant"
+                label="Foto banner / profil toko"
+                helpText="Gunakan foto lanskap untuk banner toko. Maksimal 5 MB."
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

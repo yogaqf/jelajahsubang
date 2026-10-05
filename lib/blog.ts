@@ -14,6 +14,7 @@ export type BlogPost = {
   tags: string[];
   published: boolean;
   imageUrl: string | null;
+  viewCount: number;
 };
 
 export type BlogPostDetail = BlogPost & {
@@ -35,6 +36,7 @@ function parsePostFromFile(file: string): BlogPostDetail {
     tags: Array.isArray(data.tags) ? data.tags.map((tag) => String(tag)) : [],
     published: Boolean(data.published ?? true),
     imageUrl: data.image ? String(data.image) : null,
+    viewCount: 0,
     content,
   };
 }
@@ -57,6 +59,7 @@ export function getLatestBlogPosts(limit: number = 3): BlogPost[] {
       tags: post.tags,
       published: post.published,
       imageUrl: post.imageUrl,
+      viewCount: post.viewCount,
     }));
 }
 
@@ -78,6 +81,7 @@ export function getAllBlogPosts(): BlogPost[] {
       tags: post.tags,
       published: post.published,
       imageUrl: post.imageUrl,
+      viewCount: post.viewCount,
     }));
 }
 
@@ -103,6 +107,7 @@ export async function getManagedBlogPosts(): Promise<BlogPost[]> {
     tags: ["Jelajah Subang"],
     published: entry.isPublished,
     imageUrl: entry.imageUrl,
+    viewCount: entry.viewCount,
   }));
 }
 
@@ -118,6 +123,7 @@ export async function getManagedBlogPostBySlug(slug: string): Promise<BlogPostDe
       tags: ["Jelajah Subang"],
       published: true,
       imageUrl: entry.imageUrl,
+      viewCount: entry.viewCount,
       content: entry.content || entry.summary || "",
     };
   }

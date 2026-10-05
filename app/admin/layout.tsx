@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -10,28 +11,27 @@ import {
   UtensilsCrossed,
   Layers,
   Bike,
-  ExternalLink,
   Menu,
   X,
   Database,
-  ArrowLeft,
   ChartNoAxesCombined,
   MapPinned,
   BadgePercent,
   PanelsTopLeft,
+  LogOut,
 } from "lucide-react";
 
 const navLinks = [
-  { href: "/sharelok/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/sharelok/admin/content", label: "CMS Portal Jelajah", icon: PanelsTopLeft },
-  { href: "/sharelok/admin/orders", label: "Pesanan (Orders)", icon: ShoppingBag },
-  { href: "/sharelok/admin/reports", label: "Laporan Closing", icon: ChartNoAxesCombined },
-  { href: "/sharelok/admin/areas", label: "Area Layanan", icon: MapPinned },
-  { href: "/sharelok/admin/promos", label: "Kode Promo", icon: BadgePercent },
-  { href: "/sharelok/admin/categories", label: "Kategori", icon: Layers },
-  { href: "/sharelok/admin/merchants", label: "Mitra Resto / Merchant", icon: Store },
-  { href: "/sharelok/admin/products", label: "Produk Menu", icon: UtensilsCrossed },
-  { href: "/sharelok/admin/drivers", label: "Driver / Kurir", icon: Bike },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/content", label: "CMS Portal Jelajah", icon: PanelsTopLeft },
+  { href: "/admin/orders", label: "Pesanan (Orders)", icon: ShoppingBag },
+  { href: "/admin/reports", label: "Laporan Closing", icon: ChartNoAxesCombined },
+  { href: "/admin/areas", label: "Area Layanan", icon: MapPinned },
+  { href: "/admin/promos", label: "Kode Promo", icon: BadgePercent },
+  { href: "/admin/categories", label: "Kategori", icon: Layers },
+  { href: "/admin/merchants", label: "Mitra Resto / Merchant", icon: Store },
+  { href: "/admin/products", label: "Produk Menu", icon: UtensilsCrossed },
+  { href: "/admin/drivers", label: "Driver / Kurir", icon: Bike },
 ];
 
 export default function SharelokAdminLayout({
@@ -40,7 +40,16 @@ export default function SharelokAdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (pathname === "/admin/login") return <>{children}</>;
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/admin/login");
+    router.refresh();
+  }
 
   return (
     <div className="flex min-h-screen bg-zinc-100 text-zinc-900">
@@ -120,27 +129,6 @@ export default function SharelokAdminLayout({
           })}
         </nav>
 
-        {/* Footer shortcuts */}
-        <div className="border-t border-zinc-200 p-4 space-y-1.5">
-          <Link
-            href="/sharelok/app"
-            target="_blank"
-            className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition"
-          >
-            <span className="flex items-center gap-2">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              Buka Customer App
-            </span>
-            <ExternalLink className="h-3 w-3" />
-          </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 transition"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Kembali ke Jelajah Subang
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content Area */}
@@ -155,7 +143,7 @@ export default function SharelokAdminLayout({
               <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-base sm:text-lg font-bold text-zinc-900">
-              Sharelok Admin Panel
+              Jelajah Subang Admin
             </h1>
           </div>
 
@@ -173,6 +161,7 @@ export default function SharelokAdminLayout({
                 <div className="text-[10px] text-zinc-400">Sharelok Subang</div>
               </div>
             </div>
+            <button type="button" onClick={logout} title="Keluar" aria-label="Keluar dari admin" className="rounded-xl border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"><LogOut className="h-4 w-4" /></button>
           </div>
         </header>
 

@@ -1,0 +1,1 @@
+ALTER TABLE "portal_entries" ADD COLUMN "cta_label" varchar(80);

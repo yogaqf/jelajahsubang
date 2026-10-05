@@ -1,0 +1,1 @@
+ALTER TABLE "portal_entries" ADD COLUMN "view_count" integer DEFAULT 0 NOT NULL;

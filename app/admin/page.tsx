@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-zinc-500">Transaksi terakhir pada periode {activePeriodLabel}</p>
           </div>
           <Link
-            href="/sharelok/admin/orders"
+            href="/admin/orders"
             className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition"
           >
             Lihat Semua Pesanan <ArrowUpRight className="h-3.5 w-3.5" />
@@ -362,7 +362,7 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-3.5 text-right">
                       <Link
-                        href="/sharelok/admin/orders"
+                        href="/admin/orders"
                         className="rounded-lg bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-200 transition"
                       >
                         Kelola

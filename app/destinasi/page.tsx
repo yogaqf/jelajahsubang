@@ -1,18 +1,26 @@
-import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPinned } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
+import { DestinationCard } from "@/components/destination-card";
 import { getPortalEntries } from "@/lib/portal-db";
 
 export const dynamic = "force-dynamic";
 
 export default async function DestinasiPage() {
   const managed = await getPortalEntries({ type: "DESTINATION", publishedOnly: true });
+  const destinationsByDistrict = managed.reduce<Record<string, typeof managed>>((groups, destination) => {
+    const district = destination.location?.trim() || "Kecamatan lainnya";
+    (groups[district] ||= []).push(destination);
+    return groups;
+  }, {});
   return <div className="min-h-screen bg-[#f7f8f4]"><Navbar /><main>
     <section className="bg-emerald-950 px-4 pb-20 pt-16 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Rencanakan perjalanan</p><h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Temukan sisi terbaik Kabupaten Subang.</h1><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/70">Dari udara pegunungan hingga pesisir utara, pilih tujuan yang cocok untuk perjalananmu.</p></div></section>
-    <section className="mx-auto max-w-7xl px-4 py-16">
-      <h2 className="text-2xl font-black text-zinc-900">Destinasi pilihan</h2>
-      {managed.length > 0 ? <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{managed.map((item) => <Link key={item.id} href={item.externalUrl || "#"} className="group overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm"><div className="aspect-[4/3] bg-zinc-100 bg-cover bg-center transition duration-500 group-hover:scale-105" style={{ backgroundImage: `url(${item.imageUrl || "/images/hero.jpg"})` }} /><div className="relative bg-white p-5">{item.location && <p className="flex items-center gap-1 text-xs font-bold text-emerald-700"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}<h3 className="mt-2 text-xl font-black">{item.title}</h3><p className="mt-2 text-sm leading-6 text-zinc-500">{item.summary}</p></div></Link>)}</div> : <div className="mt-7 rounded-3xl border border-dashed border-zinc-300 bg-white p-12 text-center text-sm text-zinc-500">Belum ada destinasi yang dipublikasikan dari CMS.</div>}
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Jelajah per wilayah</p><h2 className="mt-2 text-3xl font-black text-zinc-900">Destinasi berdasarkan kecamatan</h2><p className="mt-2 text-sm text-zinc-500">Pilih kecamatan untuk menemukan tempat menarik di kawasan yang sama.</p></div>
+      {managed.length > 0 ? <div className="mt-12 space-y-14">{Object.entries(destinationsByDistrict).map(([district, destinations]) => <section key={district}>
+        <div className="mb-5 flex items-center justify-between gap-4 border-b border-zinc-200 pb-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700"><MapPinned className="h-5 w-5" /></span><div><p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Kecamatan</p><h3 className="text-xl font-black text-zinc-950">{district}</h3></div></div><span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-zinc-500 shadow-sm">{destinations.length} destinasi</span></div>
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">{destinations.map((item) => <DestinationCard key={item.id} title={item.title} summary={item.summary || ""} description={item.content || item.summary || ""} district={district} imageUrl={item.imageUrl || "/images/hero.jpg"} ctaLabel={item.ctaLabel} ctaUrl={item.externalUrl} />)}</div>
+      </section>)}</div> : <div className="mt-7 rounded-3xl border border-dashed border-zinc-300 bg-white p-12 text-center text-sm text-zinc-500">Belum ada destinasi yang dipublikasikan dari CMS.</div>}
     </section>
   </main><Footer /></div>;
 }
