@@ -6,13 +6,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         has: [{ type: "host", value: "jelajahsubang.vercel.app" }],
-        destination: "https://jelajahsubang.id/:path*",
-        permanent: true,
-      },
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.jelajahsubang.id" }],
-        destination: "https://jelajahsubang.id/:path*",
+        destination: "https://www.jelajahsubang.id/:path*",
         permanent: true,
       },
     ];
