@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock3, MapPin, PenLine } from "lucide-react";
 
@@ -6,6 +7,13 @@ import { Navbar } from "@/components/navbar";
 import { getManagedBlogPosts } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Artikel Wisata dan Kuliner Subang",
+  description: "Baca artikel, panduan perjalanan, rekomendasi kuliner, dan cerita lokal terbaru dari Kabupaten Subang.",
+  alternates: { canonical: "/blog" },
+  openGraph: { title: "Artikel Jelajah Subang", description: "Inspirasi wisata, kuliner, dan cerita lokal Kabupaten Subang.", url: "/blog" },
+};
 
 export default async function BlogPage() {
   const posts = await getManagedBlogPosts();

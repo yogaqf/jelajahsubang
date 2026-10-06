@@ -46,10 +46,9 @@ export function Navbar() {
         <Link href="/" aria-label="Jelajah Subang" className="flex min-w-0 items-center gap-2">
           <Image
             src="/images/logo.PNG"
-            alt="Jelajah Subang"
+            alt=""
             width={126}
             height={100}
-            priority
             className={`shrink-0 object-contain transition-[width,height,transform] duration-500 ease-out ${isTransparent ? "h-28 w-[141px] translate-y-8 sm:h-32 sm:w-[161px]" : "h-10 w-[50px] translate-y-0"}`}
           />
           <span className={`overflow-hidden whitespace-nowrap text-base font-semibold tracking-tight transition-[max-width,opacity,transform,color] duration-500 ease-out ${isTransparent ? "max-w-0 -translate-x-2 opacity-0 text-white" : "max-w-40 translate-x-0 opacity-100 text-zinc-900"}`}>

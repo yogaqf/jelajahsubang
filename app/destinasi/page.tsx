@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { MapPinned } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -5,6 +6,13 @@ import { DestinationCard } from "@/components/destination-card";
 import { getPortalEntries } from "@/lib/portal-db";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Destinasi Wisata Subang",
+  description: "Temukan destinasi wisata Kabupaten Subang berdasarkan kecamatan, dari kawasan pegunungan hingga pesisir.",
+  alternates: { canonical: "/destinasi" },
+  openGraph: { title: "Destinasi Wisata Subang", description: "Temukan tempat menarik dan rencanakan perjalananmu di Kabupaten Subang.", url: "/destinasi" },
+};
 
 export default async function DestinasiPage() {
   const managed = await getPortalEntries({ type: "DESTINATION", publishedOnly: true });

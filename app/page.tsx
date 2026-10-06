@@ -1,10 +1,18 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/navbar";
 import { PortalHome, type PortalEntryView } from "@/components/portal-home";
 import Footer from "@/components/footer";
 import { getPortalEntries } from "@/lib/portal-db";
 import { getProducts } from "@/lib/sharelok-db";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Wisata, Kuliner & Cerita Lokal Kabupaten Subang",
+  description: "Jelajahi destinasi wisata, kuliner lokal, artikel perjalanan, dan produk pilihan dari Kabupaten Subang.",
+  alternates: { canonical: "/" },
+};
 
 export default async function Home() {
   const [databaseEntries, sharelokProducts] = await Promise.all([

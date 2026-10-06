@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ShoppingBag } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -5,6 +6,13 @@ import { ShopCatalog } from "@/components/shop-catalog";
 import { getPortalEntries } from "@/lib/portal-db";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Shop Produk Lokal Subang",
+  description: "Belanja merchandise, oleh-oleh, dan produk lokal pilihan dari Kabupaten Subang.",
+  alternates: { canonical: "/shop" },
+  openGraph: { title: "Shop Jelajah Subang", description: "Produk lokal dan merchandise pilihan dari Kabupaten Subang.", url: "/shop" },
+};
 
 export default async function ShopPage() {
   const managed = await getPortalEntries({ type: "SHOP", publishedOnly: true });
