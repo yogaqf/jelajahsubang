@@ -13,11 +13,12 @@ const typeLabels: Record<ContentType, string> = { HERO: "Hero carousel", BLOG: "
 const emptyForm = { type: "HERO" as ContentType, platform: "", title: "", slug: "", summary: "", content: "", imageUrl: "", externalUrl: "", ctaEnabled: false, ctaLabel: "Beli Tiket", embedUrl: "", location: "", price: 0, isPublished: true, sortOrder: 0, publishedAt: new Date().toISOString().slice(0, 16) };
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 
-const contentImageFolders: Record<Exclude<ContentType, "SOCIAL">, string> = {
+const contentImageFolders: Record<ContentType, string> = {
   HERO: "jelajah-subang/hero",
   BLOG: "jelajah-subang/blog",
   DESTINATION: "jelajah-subang/destinasi",
   SHOP: "jelajah-subang/shop",
+  SOCIAL: "jelajah-subang/social",
 };
 
 export default function PortalContentAdminPage() {
@@ -94,7 +95,7 @@ export default function PortalContentAdminPage() {
         <label className="text-xs font-bold text-zinc-700">Slug *<input required value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} placeholder="judul-konten" className={`${inputClass} mt-1.5`} /></label>
         <label className="text-xs font-bold text-zinc-700 sm:col-span-2">Ringkasan<textarea rows={2} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} placeholder="Deskripsi singkat untuk kartu atau hero" className={`${inputClass} mt-1.5`} /></label>
         {(form.type === "BLOG" || form.type === "DESTINATION") && <label className="text-xs font-bold text-zinc-700 sm:col-span-2">{form.type === "BLOG" ? "Isi artikel (Markdown)" : "Deskripsi lengkap destinasi"}<textarea rows={form.type === "BLOG" ? 8 : 5} value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} placeholder={form.type === "BLOG" ? "Tulis artikel lengkap di sini..." : "Ceritakan daya tarik, fasilitas, jam operasional, atau informasi penting destinasi..."} className={`${inputClass} mt-1.5 ${form.type === "BLOG" ? "font-mono" : ""}`} /></label>}
-        {form.type !== "SOCIAL" && <div className="sm:col-span-2"><ImageUploadField value={form.imageUrl} onChange={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} folder={contentImageFolders[form.type]} label={form.type === "HERO" ? "Foto hero" : form.type === "BLOG" ? "Foto artikel" : form.type === "DESTINATION" ? "Foto destinasi" : "Foto produk"} /></div>}
+        <div className="sm:col-span-2"><ImageUploadField value={form.imageUrl} onChange={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} folder={contentImageFolders[form.type]} label={form.type === "HERO" ? "Foto hero" : form.type === "BLOG" ? "Foto artikel" : form.type === "DESTINATION" ? "Foto destinasi" : form.type === "SOCIAL" ? "Thumbnail video" : "Foto produk"} /></div>
         {form.type === "SOCIAL" && <label className="text-xs font-bold text-zinc-700 sm:col-span-2">Link video *<input required value={form.embedUrl} onChange={(event) => setForm({ ...form, embedUrl: event.target.value })} placeholder="Tempel link TikTok, Instagram Reel, atau YouTube" className={`${inputClass} mt-1.5`} /><span className="mt-1 block text-[10px] font-normal text-zinc-400">Link video biasa maupun link pendek TikTok akan otomatis diubah menjadi URL iframe yang benar saat disimpan.</span></label>}
         {form.type === "DESTINATION" && <label className="text-xs font-bold text-zinc-700">Link CTA<input required={form.ctaEnabled} value={form.externalUrl} onChange={(event) => setForm({ ...form, externalUrl: event.target.value })} placeholder="https://tiket.com/... atau link WhatsApp" className={`${inputClass} mt-1.5`} /></label>}
         {form.type === "HERO" && <label className="text-xs font-bold text-zinc-700">Tautan tombol hero<input value={form.externalUrl} onChange={(event) => setForm({ ...form, externalUrl: event.target.value })} placeholder="/destinasi atau https://..." className={`${inputClass} mt-1.5`} /></label>}
