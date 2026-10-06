@@ -19,7 +19,7 @@ const BlogTerbaru: React.FC = () => {
                                     <Link href={`/blog/${blog.slug}`} className="block">
                                           <h3 className="text-xl font-semibold text-black">{blog.title}</h3>
                                           <p className="mt-2 text-sm text-zinc-600">{blog.excerpt}</p>
-                                          <p className="mt-4 text-xs text-zinc-500">{new Date(blog.date).toLocaleDateString()}</p>
+                                          <p className="mt-4 text-xs text-zinc-500">{new Date(blog.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}</p>
                                     </Link>
                               </article>
                         ))}

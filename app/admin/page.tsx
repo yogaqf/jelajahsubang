@@ -100,6 +100,7 @@ function formatRangeDate(value: string) {
   const safeValue = value || jakartaToday();
   return new Intl.DateTimeFormat("id-ID", {
     timeZone: "Asia/Jakarta",
+    weekday: "long",
     day: "numeric",
     month: "short",
     year: "numeric",

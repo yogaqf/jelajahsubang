@@ -14,9 +14,11 @@ import { absoluteUrl } from "@/lib/site-url";
 type BlogDetailPageProps = { params: Promise<{ slug: string }> };
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString("id-ID", {
+  weekday: "long",
   day: "numeric",
   month: "long",
   year: "numeric",
+  timeZone: "Asia/Jakarta",
 });
 
 export async function generateStaticParams() {

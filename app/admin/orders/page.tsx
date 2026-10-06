@@ -233,6 +233,19 @@ function whatsappNumber(value?: string) {
   return digits;
 }
 
+function formatOrderDateTime(value: string) {
+  return `${new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(value))} WIB`;
+}
+
 function openWhatsApp(phone: string | undefined, message: string) {
   const number = whatsappNumber(phone);
   if (!number) return;
@@ -770,12 +783,7 @@ export default function AdminOrdersPage() {
                   <tr key={order.id} className="hover:bg-zinc-50 transition">
                     <td className="px-4 py-3.5">
                       <div className="font-bold text-zinc-900">{order.orderNumber}</div>
-                      <div className="text-[11px] text-zinc-400">
-                        {new Date(order.createdAt).toLocaleTimeString("id-ID", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })} WIB
-                      </div>
+                      <div className="text-[11px] text-zinc-400">{formatOrderDateTime(order.createdAt)}</div>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="font-semibold text-zinc-900">{order.customerName}</div>
@@ -1106,7 +1114,7 @@ export default function AdminOrdersPage() {
                   <div key={history.id} className="relative flex gap-3 pb-4 last:pb-0">
                     {index < selectedOrder.statusHistory!.length - 1 && <span className="absolute left-[9px] top-5 h-full w-px bg-emerald-200" />}
                     <span className={`relative z-10 mt-0.5 h-5 w-5 shrink-0 rounded-full border-4 ${index === 0 ? "border-emerald-200 bg-emerald-600" : "border-zinc-200 bg-white"}`} />
-                    <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="font-black text-zinc-900">{statusMeta[history.status]?.label || history.status}</span>{index === 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[8px] font-black text-emerald-700">TERBARU</span>}<span className="ml-auto text-[9px] text-zinc-400">{new Date(history.createdAt).toLocaleString("id-ID")}</span></div><p className="mt-1 text-[11px] leading-relaxed text-zinc-500">{history.note || statusMeta[history.status]?.description}</p></div>
+                    <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="font-black text-zinc-900">{statusMeta[history.status]?.label || history.status}</span>{index === 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[8px] font-black text-emerald-700">TERBARU</span>}<span className="ml-auto text-[9px] text-zinc-400">{formatOrderDateTime(history.createdAt)}</span></div><p className="mt-1 text-[11px] leading-relaxed text-zinc-500">{history.note || statusMeta[history.status]?.description}</p></div>
                   </div>
                 )) : <div className="py-5 text-center text-xs text-zinc-400">Belum ada riwayat status.</div>}
               </div>

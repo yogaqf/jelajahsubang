@@ -107,7 +107,7 @@ function footer(context: CanvasRenderingContext2D, page: number) {
   context.beginPath(); context.moveTo(MARGIN, y - 28); context.lineTo(PAGE_WIDTH - MARGIN, y - 28); context.stroke();
   context.fillStyle = "#71717a";
   context.font = "500 15px Arial, sans-serif";
-  context.fillText(`Dibuat otomatis oleh Sharelok - ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`, MARGIN, y);
+  context.fillText(`Dibuat otomatis oleh Sharelok - ${new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date())} WIB`, MARGIN, y);
   context.textAlign = "right";
   context.fillText(`Laporan internal - halaman ${page}`, PAGE_WIDTH - MARGIN, y);
   context.textAlign = "left";

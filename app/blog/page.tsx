@@ -20,9 +20,11 @@ export default async function BlogPage() {
   const [featured, ...articles] = posts;
 
   const formatDate = (date: string) => new Date(date).toLocaleDateString("id-ID", {
+    weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Jakarta",
   });
 
   return (

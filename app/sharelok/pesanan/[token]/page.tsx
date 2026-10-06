@@ -66,13 +66,16 @@ function money(value: number) {
 }
 
 function dateTime(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
+  return `${new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
     day: "numeric",
     month: "short",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZone: "Asia/Jakarta",
-  }).format(new Date(value));
+  }).format(new Date(value))} WIB`;
 }
 
 export default function TrackingOrderPage() {

@@ -206,7 +206,7 @@ async function createSettlementJpeg(options: {
   context.fillText("Terima kasih telah menjadi bagian dari Sharelok.", 70, footerY + 50);
   context.fillStyle = "#71717a";
   context.font = "500 16px Arial, sans-serif";
-  context.fillText(`Dibuat otomatis ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`, 70, footerY + 85);
+  context.fillText(`Dibuat otomatis ${new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date())} WIB`, 70, footerY + 85);
   context.textAlign = "right";
   context.fillText("Laporan closing harian", 1010, footerY + 85);
   context.textAlign = "left";

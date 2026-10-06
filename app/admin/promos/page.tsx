@@ -192,7 +192,7 @@ export default function PromosAdminPage() {
               <div className="flex flex-wrap items-center gap-2"><span className="font-black">{item.code}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.isActive && !expired ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>{expired ? "KEDALUWARSA" : item.isActive ? "AKTIF" : "NONAKTIF"}</span></div>
               {item.description && <p className="mt-0.5 text-xs text-zinc-600">{item.description}</p>}
               <p className="mt-1 text-xs font-semibold text-zinc-500">Diskon {benefit} · Min. {rupiah(item.minOrder)} · Terpakai {item.usedCount}{item.usageLimit ? `/${item.usageLimit}` : " (tanpa batas)"}</p>
-              <p className="mt-1 text-[10px] text-zinc-400">Berakhir {new Date(item.expiresAt).toLocaleString("id-ID")}</p>
+              <p className="mt-1 text-[10px] text-zinc-400">Berakhir {new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date(item.expiresAt))} WIB</p>
             </div>
             <button onClick={() => edit(item)} aria-label={`Edit promo ${item.code}`} className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100"><Pencil className="h-4 w-4" /></button>
             <button onClick={() => remove(item)} aria-label={`Hapus promo ${item.code}`} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
