@@ -8,15 +8,14 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, merchants] = await Promise.all([getManagedBlogPosts(), getMerchants()]);
-  const now = new Date();
   const staticPages: MetadataRoute.Sitemap = [
-    { url: absoluteUrl("/"), lastModified: now, changeFrequency: "weekly", priority: 1 },
-    { url: absoluteUrl("/destinasi"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: absoluteUrl("/blog"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: absoluteUrl("/sharelok"), lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: absoluteUrl("/sharelok/app"), lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: absoluteUrl("/shop"), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: absoluteUrl("/tentang"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
+    { url: absoluteUrl("/destinasi"), changeFrequency: "weekly", priority: 0.9 },
+    { url: absoluteUrl("/blog"), changeFrequency: "weekly", priority: 0.9 },
+    { url: absoluteUrl("/sharelok"), changeFrequency: "daily", priority: 0.9 },
+    { url: absoluteUrl("/sharelok/app"), changeFrequency: "daily", priority: 0.8 },
+    { url: absoluteUrl("/shop"), changeFrequency: "weekly", priority: 0.7 },
+    { url: absoluteUrl("/tentang"), changeFrequency: "monthly", priority: 0.6 },
   ];
   const articlePages: MetadataRoute.Sitemap = posts.map((post) => ({
     url: absoluteUrl(`/blog/${post.slug}`),

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/api/", "/sharelok/pesanan/"],
+      disallow: ["/admin", "/api", "/sharelok/pesanan"],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
     host: siteUrl,

@@ -135,8 +135,6 @@ export default function TrackingOrderPage() {
 
   const currentProgress = progressByStatus[order.status] || 1;
   const isClosed = order.status === "CANCELLED";
-  const whatsappText = encodeURIComponent(`Halo Admin Sharelok, saya ingin bertanya tentang pesanan ${order.orderNumber}.`);
-
   return (
     <main className="min-h-screen bg-[#f5f7f4] pb-24 text-zinc-900">
       <header className="relative overflow-hidden bg-emerald-950 px-5 pb-20 pt-6 text-white">
@@ -226,7 +224,7 @@ export default function TrackingOrderPage() {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur">
-        <div className="mx-auto max-w-2xl"><a href={`https://wa.me/${ADMIN_WHATSAPP}?text=${whatsappText}`} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20"><MessageCircle className="h-5 w-5" /> Hubungi Admin Sharelok</a></div>
+        <div className="mx-auto max-w-2xl"><a href={`https://api.whatsapp.com/send/?phone=${ADMIN_WHATSAPP}&type=phone_number&app_absent=0`} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20"><MessageCircle className="h-5 w-5" /> Hubungi Admin Sharelok</a></div>
       </div>
     </main>
   );

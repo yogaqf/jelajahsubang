@@ -246,14 +246,32 @@ function formatOrderDateTime(value: string) {
   }).format(new Date(value))} WIB`;
 }
 
-function openWhatsApp(phone: string | undefined, message: string) {
+function openExternal(url: string) {
+  const opened = window.open(url, "_blank");
+  if (opened) opened.opener = null;
+  else window.location.assign(url);
+}
+
+function whatsappUrl(phone: string | undefined, message: string) {
   const number = whatsappNumber(phone);
-  if (!number) return;
-  window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
+  if (!number) return "";
+  const params = new URLSearchParams({ phone: number, text: message, type: "phone_number", app_absent: "0" });
+  return `https://api.whatsapp.com/send/?${params.toString()}`;
+}
+
+function openWhatsApp(phone: string | undefined, message: string) {
+  const url = whatsappUrl(phone, message);
+  if (!url) return false;
+  openExternal(url);
+  return true;
+}
+
+function trackingPath(order: Pick<Order, "trackingToken">) {
+  return `/sharelok/pesanan/${encodeURIComponent(order.trackingToken)}`;
 }
 
 function trackingUrl(order: Pick<Order, "trackingToken">) {
-  return `${window.location.origin}/sharelok/pesanan/${order.trackingToken}`;
+  return `${window.location.origin}${trackingPath(order)}`;
 }
 
 function WhatsAppIcon({ className = "" }: { className?: string }) {
@@ -405,10 +423,11 @@ export default function AdminOrdersPage() {
   }
 
   function handleShareTracking(order: Order) {
-    openWhatsApp(
+    const opened = openWhatsApp(
       order.customerPhone,
       `Halo Kak ${order.customerName} 👋\n\nPantau riwayat dan status pesanan *${order.orderNumber}* melalui link berikut:\n${trackingUrl(order)}\n\nLink ini khusus untuk pesanan Kakak. Mohon tidak dibagikan ke orang lain ya 🙏`
     );
+    if (!opened) setActionError("Nomor WhatsApp customer belum tersedia.");
   }
 
   function orderSummary(order: Order) {
@@ -861,12 +880,14 @@ export default function AdminOrdersPage() {
                 <h3 className="text-lg font-bold text-zinc-900">{selectedOrder.orderNumber}</h3>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.open(trackingUrl(selectedOrder), "_blank")}
+                <a
+                  href={trackingPath(selectedOrder)}
+                  target="_blank"
+                  rel="noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Halaman customer
-                </button>
+                </a>
                 <button
                   onClick={() => setSelectedOrder(null)}
                   className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100"
