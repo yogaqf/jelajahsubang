@@ -28,7 +28,6 @@ export const orderStatusEnum = pgEnum("order_status", [
   "DELIVERING",
   "COMPLETED",
   "CANCELLED",
-  "EXPIRED",
 ]);
 
 export const orderSourceEnum = pgEnum("order_source", [

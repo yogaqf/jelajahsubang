@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Compass, UtensilsCrossed } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -81,7 +80,7 @@ export function Navbar() {
                 type="button"
                 aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
                 aria-expanded={menuOpen}
-                className={`relative flex h-11 w-11 items-center justify-center rounded-full border shadow-sm transition-all duration-300 ${isTransparent ? "border-white/45 bg-black/10 text-white backdrop-blur-md hover:bg-white/15" : "border-zinc-200 bg-white text-zinc-950 hover:border-emerald-300 hover:bg-emerald-50"}`}
+                className={`relative flex h-10 w-10 items-center justify-center transition-colors duration-300 ${isTransparent ? "text-white" : "text-zinc-950"}`}
               >
                 <span className="relative h-5 w-5" aria-hidden="true">
                   <span className={`absolute left-0 top-1 h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-out ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`} />
@@ -90,25 +89,18 @@ export function Navbar() {
                 </span>
               </button>
             </SheetTrigger>
-            <SheetContent side="right" showCloseButton={false} className="w-[min(88vw,370px)] border-l-0 bg-[#f7f8f4] p-0 shadow-[-24px_0_70px_rgba(0,0,0,0.18)]">
-              <SheetHeader className="relative overflow-hidden bg-emerald-950 px-6 pb-7 pt-6 text-left text-white">
-                <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full bg-emerald-500/20 blur-2xl" />
-                <div className="relative flex items-center justify-between">
-                  <Link href="/" className="flex items-center gap-3" aria-label="Kembali ke beranda">
-                    <Image src="/images/logo.PNG" alt="" width={64} height={52} className="h-12 w-16 object-contain" />
-                    <div><SheetTitle className="text-left text-base font-black text-white">Jelajah Subang</SheetTitle><p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">Temukan cerita lokal</p></div>
-                  </Link>
-                  <SheetClose asChild><button type="button" aria-label="Tutup menu" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:rotate-90 hover:bg-white/20"><span className="relative h-4 w-4"><span className="absolute left-0 top-[7px] h-0.5 w-4 rotate-45 rounded-full bg-current" /><span className="absolute left-0 top-[7px] h-0.5 w-4 -rotate-45 rounded-full bg-current" /></span></button></SheetClose>
-                </div>
-                <p className="relative mt-5 max-w-xs text-sm leading-6 text-emerald-50/70">Wisata, kuliner, artikel, dan produk lokal Kabupaten Subang dalam satu tempat.</p>
+            <SheetContent side="right" className="w-[85vw] max-w-sm border-l border-zinc-200 bg-white p-6 shadow-[-16px_0_50px_rgba(0,0,0,0.12)]">
+              <SheetHeader className="border-b border-zinc-100 pb-5 text-left">
+                <SheetTitle className="animate-[mobile-menu-item-in_380ms_cubic-bezier(0.22,1,0.36,1)_both] text-left text-base font-black text-zinc-950 motion-reduce:animate-none">Menu</SheetTitle>
+                <p className="mt-0.5 animate-[mobile-menu-item-in_420ms_cubic-bezier(0.22,1,0.36,1)_80ms_both] text-xs text-zinc-500 motion-reduce:animate-none">Jelajah Subang</p>
               </SheetHeader>
-              <nav className="flex flex-1 flex-col gap-2 px-4 py-5">
+              <nav className="mt-1 flex flex-1 flex-col gap-1 py-3">
                 {navItems.map((item, index) => {
                   const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                  return <SheetClose asChild key={item.label}><Link href={item.href} className={`group flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 ${active ? "bg-emerald-700 text-white shadow-lg shadow-emerald-900/15" : "text-zinc-700 hover:translate-x-1 hover:bg-white hover:text-emerald-800 hover:shadow-sm"}`}><span className={`flex h-8 w-8 items-center justify-center rounded-xl text-[10px] font-black ${active ? "bg-white/15 text-white" : "bg-emerald-100 text-emerald-800"}`}>{String(index + 1).padStart(2, "0")}</span><span className="flex-1">{item.label}</span><ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${active ? "text-emerald-200" : "text-zinc-300"}`} /></Link></SheetClose>;
+                  return <SheetClose asChild key={item.label}><Link href={item.href} style={{ animationDelay: `${120 + index * 55}ms` }} className={`animate-[mobile-menu-item-in_420ms_cubic-bezier(0.22,1,0.36,1)_both] rounded-xl px-4 py-3 text-sm font-bold transition-[background-color,color,transform] duration-200 motion-reduce:animate-none ${active ? "bg-zinc-900 text-white" : "text-zinc-700 hover:translate-x-1 hover:bg-zinc-100 hover:text-zinc-950"}`}>{item.label}</Link></SheetClose>;
                 })}
               </nav>
-              <div className="m-4 mt-auto rounded-3xl bg-[#180d08] p-5 text-white shadow-xl shadow-orange-950/10"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-orange-300"><UtensilsCrossed className="h-4 w-4" />Lagi lapar?</div><p className="mt-2 text-sm leading-6 text-white/70">Pesan menu lokal favoritmu melalui Sharelok.</p><SheetClose asChild><Link href="/sharelok" className="mt-4 flex items-center justify-between rounded-xl bg-orange-400 px-4 py-3 text-xs font-black text-zinc-950">Buka Sharelok<Compass className="h-4 w-4" /></Link></SheetClose></div>
+              <p className="mt-auto animate-[mobile-menu-item-in_420ms_cubic-bezier(0.22,1,0.36,1)_420ms_both] border-t border-zinc-100 pt-5 text-xs leading-5 text-zinc-400 motion-reduce:animate-none">Wisata, kuliner, artikel, dan produk lokal Kabupaten Subang.</p>
             </SheetContent>
           </Sheet>
         </div>

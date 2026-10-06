@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Phone,
   MessageCircle,
   MapPin,
 } from "lucide-react";
@@ -19,6 +18,12 @@ import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { useAppAlert } from "@/components/ui/app-alert";
 
 type MerchantWithArea = Merchant & { area?: ServiceArea | null };
+
+function whatsappNumber(value: string | null | undefined) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  return digits.startsWith("8") ? `62${digits}` : digits;
+}
 
 export default function AdminMerchantsPage() {
   const { ask } = useAppAlert();
@@ -34,7 +39,6 @@ export default function AdminMerchantsPage() {
     name: "",
     slug: "",
     description: "",
-    phone: "",
     whatsapp: "",
     address: "",
     latitude: "",
@@ -60,7 +64,8 @@ export default function AdminMerchantsPage() {
   }
 
   useEffect(() => {
-    loadMerchants();
+    const timer = window.setTimeout(() => { void loadMerchants(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function handleOpenAdd() {
@@ -70,7 +75,6 @@ export default function AdminMerchantsPage() {
       name: "",
       slug: "",
       description: "",
-      phone: "",
       whatsapp: "",
       address: "",
       latitude: "-6.5683",
@@ -89,8 +93,7 @@ export default function AdminMerchantsPage() {
       name: m.name,
       slug: m.slug,
       description: m.description || "",
-      phone: m.phone || "",
-      whatsapp: m.whatsapp || "",
+      whatsapp: m.whatsapp || m.phone || "",
       address: m.address || "",
       latitude: m.latitude || "",
       longitude: m.longitude || "",
@@ -105,17 +108,18 @@ export default function AdminMerchantsPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload = { ...formData, phone: formData.whatsapp };
       if (editingId) {
         await fetch("/api/sharelok/merchants", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, ...formData }),
+          body: JSON.stringify({ id: editingId, ...payload }),
         });
       } else {
         await fetch("/api/sharelok/merchants", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
       }
       setIsModalOpen(false);
@@ -225,19 +229,15 @@ export default function AdminMerchantsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 space-y-1">
-                      {m.whatsapp && (
+                      {(m.whatsapp || m.phone) && (
                         <a
-                          href={`https://wa.me/${m.whatsapp}`}
+                          href={`https://wa.me/${whatsappNumber(m.whatsapp || m.phone)}`}
                           target="_blank"
+                          rel="noreferrer"
                           className="flex items-center gap-1 text-[11px] text-emerald-700 font-medium hover:underline"
                         >
-                          <MessageCircle className="h-3 w-3" /> {m.whatsapp}
+                          <MessageCircle className="h-3 w-3" /> {m.whatsapp || m.phone}
                         </a>
-                      )}
-                      {m.phone && (
-                        <div className="flex items-center gap-1 text-[11px] text-zinc-500">
-                          <Phone className="h-3 w-3" /> {m.phone}
-                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3.5 max-w-xs text-zinc-600">
@@ -349,31 +349,20 @@ export default function AdminMerchantsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-zinc-700 mb-1">
-                    No. WhatsApp (Awalan 62)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="628123456789"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-zinc-700 mb-1">
-                    No. Telepon Alternatif
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="08123456789"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-zinc-700 mb-1">
+                  Nomor WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  placeholder="08123456789 atau 628123456789"
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-zinc-400">Digunakan admin untuk menghubungi mitra melalui WhatsApp.</p>
               </div>
 
               <div>

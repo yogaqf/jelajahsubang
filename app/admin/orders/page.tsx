@@ -122,7 +122,6 @@ const statusBadgeColor: Record<string, string> = {
   DELIVERING: "bg-sky-100 text-sky-800 border-sky-200",
   COMPLETED: "bg-emerald-100 text-emerald-800 border-emerald-200",
   CANCELLED: "bg-rose-100 text-rose-800 border-rose-200",
-  EXPIRED: "bg-zinc-100 text-zinc-700 border-zinc-200",
 };
 
 const statusTabs = [
@@ -136,7 +135,6 @@ const statusTabs = [
   { id: "DELIVERING", label: "Diantar" },
   { id: "COMPLETED", label: "Selesai" },
   { id: "CANCELLED", label: "Dibatalkan" },
-  { id: "EXPIRED", label: "Kedaluwarsa" },
 ];
 
 const statusMeta: Record<string, { label: string; description: string }> = {
@@ -149,7 +147,6 @@ const statusMeta: Record<string, { label: string; description: string }> = {
   DELIVERING: { label: "Sedang diantar", description: "Driver sedang menuju alamat customer." },
   COMPLETED: { label: "Pesanan selesai", description: "Pesanan sudah diterima customer." },
   CANCELLED: { label: "Dibatalkan", description: "Pesanan dibatalkan." },
-  EXPIRED: { label: "Kedaluwarsa", description: "Customer tidak melanjutkan konfirmasi." },
 };
 
 const workflowLanes = [
@@ -196,7 +193,7 @@ function completedWorkflowSteps(order: Order) {
 }
 
 function adminFocus(order: Order) {
-  if (["CANCELLED", "EXPIRED"].includes(order.status)) {
+  if (order.status === "CANCELLED") {
     return { step: 0, title: "Order sudah ditutup", detail: "Tidak ada tindakan lanjutan untuk order ini." };
   }
   if (order.status === "COMPLETED") {
@@ -821,7 +818,7 @@ export default function AdminOrdersPage() {
                         {detailLoadingId === order.id ? "Memuat..." : "Detail"}
                       </button>
 
-                      {!['COMPLETED', 'CANCELLED', 'EXPIRED'].includes(order.status) && (
+                      {!['COMPLETED', 'CANCELLED'].includes(order.status) && (
                         <button
                           onClick={() => openOrderDetails(order)}
                           disabled={detailLoadingId === order.id}
@@ -898,13 +895,13 @@ export default function AdminOrdersPage() {
                           const step = lane.steps.find((item) => item.number === number);
                           if (!step) return <div key={number} className="min-h-16 rounded-lg bg-zinc-50/60" />;
                           const done = completed.has(number);
-                          const active = currentStep === number && !["CANCELLED", "EXPIRED"].includes(selectedOrder.status);
+                          const active = currentStep === number && selectedOrder.status !== "CANCELLED";
                           return <div key={number} className={`relative min-h-16 rounded-xl border p-2 ${active ? `${tone.active} ring-2 ring-offset-1` : done ? tone.done : "border-zinc-200 bg-white text-zinc-400"}`}><span className={`absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black ${done ? "bg-zinc-900 text-white" : active ? "bg-white text-zinc-900 ring-2 ring-current" : "bg-zinc-200 text-zinc-500"}`}>{done ? "✓" : number}</span><div className="mt-1 text-[10px] font-black leading-tight">{step.label}</div><div className="mt-1 text-[8px] leading-tight opacity-70">{step.detail}</div></div>;
                         })}</div>;
                       })}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3"><button onClick={() => handleUpdateStatus(selectedOrder.id, "CANCELLED", "Pesanan dibatalkan oleh admin")} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status)} className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 disabled:hidden">Batalkan</button>{(() => { const usesWhatsApp = (focus.step === 2 && selectedOrder.merchantStatus !== "CONTACTED") || focus.step === 3 || focus.step === 5; return <button onClick={() => handleNextStep(selectedOrder)} disabled={isSubmitting || ["COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status) || (focus.step === 6 && Boolean(selectedOrder.driverAssignments?.some((item) => item.status === "OFFERED")))} className={`ml-auto inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${usesWhatsApp ? "bg-[#25D366] hover:bg-[#20bd5a]" : "bg-zinc-950 hover:bg-zinc-800"}`}>{usesWhatsApp && <WhatsAppIcon className="h-4 w-4" />}{isSubmitting ? "Memproses..." : nextStepLabel(selectedOrder)} →</button>; })()}</div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3"><button onClick={() => handleUpdateStatus(selectedOrder.id, "CANCELLED", "Pesanan dibatalkan oleh admin")} disabled={isSubmitting || ["COMPLETED", "CANCELLED"].includes(selectedOrder.status)} className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 disabled:hidden">Batalkan</button>{(() => { const usesWhatsApp = (focus.step === 2 && selectedOrder.merchantStatus !== "CONTACTED") || focus.step === 3 || focus.step === 5; return <button onClick={() => handleNextStep(selectedOrder)} disabled={isSubmitting || ["COMPLETED", "CANCELLED"].includes(selectedOrder.status) || (focus.step === 6 && Boolean(selectedOrder.driverAssignments?.some((item) => item.status === "OFFERED")))} className={`ml-auto inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${usesWhatsApp ? "bg-[#25D366] hover:bg-[#20bd5a]" : "bg-zinc-950 hover:bg-zinc-800"}`}>{usesWhatsApp && <WhatsAppIcon className="h-4 w-4" />}{isSubmitting ? "Memproses..." : nextStepLabel(selectedOrder)} →</button>; })()}</div>
                 </section>
               );
             })()}
@@ -978,7 +975,7 @@ export default function AdminOrdersPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div><h4 className="text-xs font-bold uppercase tracking-wider text-zinc-800">Item Makanan Dipesan</h4><p className="mt-1 text-[10px] text-zinc-500">Jika ada menu kosong, edit sesuai persetujuan customer sebelum mengirim tagihan.</p></div>
-                <button type="button" onClick={() => openItemEditor(selectedOrder)} disabled={selectedOrder.paymentStatus === "PAID" || ["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(selectedOrder.status)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-black text-orange-700 hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"><Pencil className="h-3.5 w-3.5" />Edit menu</button>
+                <button type="button" onClick={() => openItemEditor(selectedOrder)} disabled={selectedOrder.paymentStatus === "PAID" || ["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED"].includes(selectedOrder.status)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-black text-orange-700 hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40"><Pencil className="h-3.5 w-3.5" />Edit menu</button>
               </div>
               <div className="rounded-xl border border-zinc-200 divide-y divide-zinc-100">
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (

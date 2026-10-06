@@ -53,7 +53,7 @@ const periodOptions: { id: PeriodId; label: string }[] = [
   { id: "yesterday", label: "Kemarin" },
   { id: "7d", label: "7 Hari Terakhir" },
   { id: "30d", label: "30 Hari Terakhir" },
-  { id: "custom", label: "Pilih Tanggal" },
+  { id: "custom", label: "Rentang Tanggal" },
 ];
 
 const jakartaDateFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -72,22 +72,38 @@ function shiftJakartaDate(value: string, days: number) {
   return jakartaDateFormatter.format(new Date(timestamp));
 }
 
-function periodQuery(period: PeriodId, customDate: string) {
+function periodQuery(period: PeriodId, customFrom: string, customTo: string) {
   if (period === "all") return "";
   const today = jakartaToday();
-  const selectedDate = period === "custom" ? customDate || today : period === "yesterday" ? shiftJakartaDate(today, -1) : today;
+  const selectedDate = period === "yesterday" ? shiftJakartaDate(today, -1) : today;
+  const rangeStart = customFrom || today;
+  const rangeEnd = customTo || rangeStart;
   const startDate = period === "7d"
     ? shiftJakartaDate(today, -6)
     : period === "30d"
       ? shiftJakartaDate(today, -29)
-      : selectedDate;
-  const endDate = period === "yesterday" || period === "custom"
-    ? shiftJakartaDate(selectedDate, 1)
+      : period === "custom"
+        ? rangeStart
+        : selectedDate;
+  const endDate = period === "custom"
+    ? shiftJakartaDate(rangeEnd, 1)
+    : period === "yesterday"
+      ? shiftJakartaDate(selectedDate, 1)
     : shiftJakartaDate(today, 1);
   return new URLSearchParams({
     from: `${startDate}T00:00:00+07:00`,
     to: `${endDate}T00:00:00+07:00`,
   }).toString();
+}
+
+function formatRangeDate(value: string) {
+  const safeValue = value || jakartaToday();
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${safeValue}T00:00:00+07:00`));
 }
 
 const statusBadgeColor: Record<string, string> = {
@@ -105,12 +121,13 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodId>("all");
-  const [customDate, setCustomDate] = useState(jakartaToday);
+  const [customFrom, setCustomFrom] = useState(jakartaToday);
+  const [customTo, setCustomTo] = useState(jakartaToday);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const query = periodQuery(period, customDate);
+      const query = periodQuery(period, customFrom, customTo);
       const suffix = query ? `?${query}` : "";
       const [resStats, resOrders] = await Promise.all([
         fetch(`/api/sharelok/stats${suffix}`),
@@ -125,14 +142,16 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [customDate, period]);
+  }, [customFrom, customTo, period]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => loadData(), 0);
     return () => window.clearTimeout(timer);
   }, [loadData]);
 
-  const activePeriodLabel = periodOptions.find((item) => item.id === period)?.label || "All Time";
+  const activePeriodLabel = period === "custom"
+    ? `${formatRangeDate(customFrom)} – ${formatRangeDate(customTo)}`
+    : periodOptions.find((item) => item.id === period)?.label || "All Time";
 
   return (
     <div className="space-y-6">
@@ -165,7 +184,10 @@ export default function AdminDashboardPage() {
             {periodOptions.map((option) => (
               <button key={option.id} type="button" onClick={() => setPeriod(option.id)} className={`rounded-xl px-3 py-2 text-[11px] font-bold transition ${period === option.id ? "bg-emerald-700 text-white shadow-sm" : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-emerald-300 hover:text-emerald-700"}`}>{option.label}</button>
             ))}
-            {period === "custom" && <input type="date" value={customDate} onChange={(event) => setCustomDate(event.target.value)} max={jakartaToday()} className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-emerald-100" />}
+            {period === "custom" && <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+              <label className="text-[10px] font-bold text-zinc-500">Dari<input required type="date" value={customFrom} onChange={(event) => { const value = event.target.value; if (!value) return; setCustomFrom(value); if (customTo < value) setCustomTo(value); }} max={customTo || jakartaToday()} className="mt-1 w-full rounded-xl border border-emerald-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-emerald-100" /></label>
+              <label className="text-[10px] font-bold text-zinc-500">Sampai<input required type="date" value={customTo} onChange={(event) => { if (event.target.value) setCustomTo(event.target.value); }} min={customFrom} max={jakartaToday()} className="mt-1 w-full rounded-xl border border-emerald-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-emerald-100" /></label>
+            </div>}
           </div>
         </div>
       </section>

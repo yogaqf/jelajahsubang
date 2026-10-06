@@ -171,7 +171,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-emerald-100">
                   {related.imageUrl ? <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105" style={{ backgroundImage: `url(${related.imageUrl})` }} /> : <div className="flex h-full items-center justify-center text-2xl font-black text-emerald-700/25">{String(index + 1).padStart(2, "0")}</div>}
                 </div>
-                <div className="min-w-0 py-0.5"><p className="text-[10px] font-bold text-zinc-400">{formatDate(related.date)} · {related.viewCount.toLocaleString("id-ID")} dibaca</p><h3 className="mt-1 line-clamp-3 text-sm font-black leading-5 text-zinc-900 transition group-hover:text-emerald-700">{related.title}</h3><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-black text-emerald-700">Baca artikel<ArrowRight className="h-3 w-3" /></span></div>
+                <div className="min-w-0 py-0.5"><p className="text-[10px] font-bold text-zinc-400">{formatDate(related.date)} · {related.viewCount.toLocaleString("id-ID")} view</p><h3 className="mt-1 line-clamp-3 text-sm font-black leading-5 text-zinc-900 transition group-hover:text-emerald-700">{related.title}</h3><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-black text-emerald-700">Baca artikel<ArrowRight className="h-3 w-3" /></span></div>
               </Link>)}
             </div> : <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">Belum ada artikel lainnya.</div>}
           </aside>

@@ -20,5 +20,5 @@ export function ArticleViewCounter({ slug, initialCount }: { slug: string; initi
     return () => { active = false; };
   }, [slug]);
 
-  return <span className="inline-flex items-center gap-1.5" title="Jumlah artikel dibaca"><Eye className="h-4 w-4" />{viewCount.toLocaleString("id-ID")} kali dibaca</span>;
+  return <span className="inline-flex items-center gap-1.5" title="Jumlah view artikel"><Eye className="h-4 w-4" />{viewCount.toLocaleString("id-ID")} view</span>;
 }

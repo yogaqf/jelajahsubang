@@ -131,7 +131,7 @@ export default function TrackingOrderPage() {
   }
 
   const currentProgress = progressByStatus[order.status] || 1;
-  const isClosed = ["CANCELLED", "EXPIRED"].includes(order.status);
+  const isClosed = order.status === "CANCELLED";
   const whatsappText = encodeURIComponent(`Halo Admin Sharelok, saya ingin bertanya tentang pesanan ${order.orderNumber}.`);
 
   return (

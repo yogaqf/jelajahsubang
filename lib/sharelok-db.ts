@@ -196,7 +196,6 @@ const publicStatusCopy: Record<string, { label: string; description: string }> =
   DELIVERING: { label: "Sedang diantar", description: "Driver sedang mengantar pesanan ke alamatmu." },
   COMPLETED: { label: "Pesanan selesai", description: "Pesanan telah diterima. Terima kasih sudah order di Sharelok." },
   CANCELLED: { label: "Pesanan dibatalkan", description: "Pesanan tidak dapat dilanjutkan. Hubungi admin jika membutuhkan bantuan." },
-  EXPIRED: { label: "Pesanan kedaluwarsa", description: "Waktu konfirmasi pesanan telah berakhir." },
 };
 
 export async function getPublicOrderByTrackingToken(trackingToken: string) {
@@ -673,7 +672,7 @@ export async function updateOrderItems(orderId: string, rawItems: OrderItemsUpda
     : store.orders.find((item) => item.id === orderId);
   if (!order) throw new Error("Pesanan tidak ditemukan.");
   if (order.paymentStatus === "PAID") throw new Error("Menu tidak dapat diubah setelah pembayaran diverifikasi.");
-  if (["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(order.status)) {
+  if (["PREPARING", "READY", "DELIVERING", "COMPLETED", "CANCELLED"].includes(order.status)) {
     throw new Error("Menu tidak dapat diubah pada tahap pesanan ini.");
   }
 
@@ -1192,6 +1191,14 @@ export async function deleteServiceArea(id: string) {
 // ====================================================
 // 5. MERCHANTS
 // ====================================================
+function normalizeWhatsappContact(value?: string | null) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
 export async function getMerchants() {
   if (db && isDatabaseConfigured) {
     try {
@@ -1205,9 +1212,12 @@ export async function getMerchants() {
 
 export async function createMerchant(data: schema.NewMerchant) {
   const now = new Date();
+  const contact = normalizeWhatsappContact(data.whatsapp || data.phone);
+  if (!contact) throw new Error("Nomor WhatsApp mitra wajib diisi.");
+  const payload = { ...data, phone: contact, whatsapp: contact };
   if (db && isDatabaseConfigured) {
     try {
-      const [item] = await db.insert(schema.merchants).values(data).returning();
+      const [item] = await db.insert(schema.merchants).values(payload).returning();
       return item;
     } catch (e) {
       console.error("Neon createMerchant error:", e);
@@ -1215,18 +1225,18 @@ export async function createMerchant(data: schema.NewMerchant) {
   }
   const item: schema.Merchant = {
     id: `m-${Date.now()}`,
-    areaId: data.areaId || null,
-    name: data.name,
-    slug: data.slug,
-    description: data.description || null,
-    phone: data.phone || null,
-    whatsapp: data.whatsapp || null,
-    address: data.address || null,
-    latitude: data.latitude || null,
-    longitude: data.longitude || null,
-    imageUrl: data.imageUrl || null,
-    isActive: data.isActive ?? true,
-    sortOrder: data.sortOrder ?? 0,
+    areaId: payload.areaId || null,
+    name: payload.name,
+    slug: payload.slug,
+    description: payload.description || null,
+    phone: contact,
+    whatsapp: contact,
+    address: payload.address || null,
+    latitude: payload.latitude || null,
+    longitude: payload.longitude || null,
+    imageUrl: payload.imageUrl || null,
+    isActive: payload.isActive ?? true,
+    sortOrder: payload.sortOrder ?? 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -1236,11 +1246,15 @@ export async function createMerchant(data: schema.NewMerchant) {
 
 export async function updateMerchant(id: string, data: Partial<schema.NewMerchant>) {
   const now = new Date();
+  const contactWasUpdated = data.whatsapp !== undefined || data.phone !== undefined;
+  const contact = contactWasUpdated ? normalizeWhatsappContact(data.whatsapp || data.phone) : "";
+  if (contactWasUpdated && !contact) throw new Error("Nomor WhatsApp mitra wajib diisi.");
+  const payload = contactWasUpdated ? { ...data, phone: contact, whatsapp: contact } : data;
   if (db && isDatabaseConfigured) {
     try {
       const [updated] = await db
         .update(schema.merchants)
-        .set({ ...data, updatedAt: now })
+        .set({ ...payload, updatedAt: now })
         .where(eq(schema.merchants.id, id))
         .returning();
       return updated;
@@ -1250,7 +1264,7 @@ export async function updateMerchant(id: string, data: Partial<schema.NewMerchan
   }
   const idx = store.merchants.findIndex((m) => m.id === id);
   if (idx !== -1) {
-    store.merchants[idx] = { ...store.merchants[idx], ...data, updatedAt: now };
+    store.merchants[idx] = { ...store.merchants[idx], ...payload, updatedAt: now };
     return store.merchants[idx];
   }
   return null;
@@ -1413,9 +1427,12 @@ export async function getDrivers() {
 
 export async function createDriver(data: schema.NewDriver) {
   const now = new Date();
+  const contact = normalizeWhatsappContact(data.whatsapp || data.phone);
+  if (!contact) throw new Error("Nomor WhatsApp driver wajib diisi.");
+  const payload = { ...data, phone: contact, whatsapp: contact };
   if (db && isDatabaseConfigured) {
     try {
-      const [item] = await db.insert(schema.drivers).values(data).returning();
+      const [item] = await db.insert(schema.drivers).values(payload).returning();
       return item;
     } catch (e) {
       console.error("Neon createDriver error:", e);
@@ -1423,15 +1440,15 @@ export async function createDriver(data: schema.NewDriver) {
   }
   const item: schema.Driver = {
     id: `d-${Date.now()}`,
-    areaId: data.areaId || null,
-    name: data.name,
-    phone: data.phone,
-    whatsapp: data.whatsapp || null,
-    vehicleType: data.vehicleType || null,
-    vehiclePlate: data.vehiclePlate || null,
-    commissionPercent: data.commissionPercent ?? 80,
-    isActive: data.isActive ?? true,
-    notes: data.notes || null,
+    areaId: payload.areaId || null,
+    name: payload.name,
+    phone: contact,
+    whatsapp: contact,
+    vehicleType: payload.vehicleType || null,
+    vehiclePlate: payload.vehiclePlate || null,
+    commissionPercent: payload.commissionPercent ?? 80,
+    isActive: payload.isActive ?? true,
+    notes: payload.notes || null,
     createdAt: now,
     updatedAt: now,
   };
@@ -1679,11 +1696,15 @@ export async function getDailyClosingReport(date: string) {
 
 export async function updateDriver(id: string, data: Partial<schema.NewDriver>) {
   const now = new Date();
+  const contactWasUpdated = data.whatsapp !== undefined || data.phone !== undefined;
+  const contact = contactWasUpdated ? normalizeWhatsappContact(data.whatsapp || data.phone) : "";
+  if (contactWasUpdated && !contact) throw new Error("Nomor WhatsApp driver wajib diisi.");
+  const payload = contactWasUpdated ? { ...data, phone: contact, whatsapp: contact } : data;
   if (db && isDatabaseConfigured) {
     try {
       const [updated] = await db
         .update(schema.drivers)
-        .set({ ...data, updatedAt: now })
+        .set({ ...payload, updatedAt: now })
         .where(eq(schema.drivers.id, id))
         .returning();
       return updated;
@@ -1693,7 +1714,7 @@ export async function updateDriver(id: string, data: Partial<schema.NewDriver>) 
   }
   const idx = store.drivers.findIndex((d) => d.id === id);
   if (idx !== -1) {
-    store.drivers[idx] = { ...store.drivers[idx], ...data, updatedAt: now };
+    store.drivers[idx] = { ...store.drivers[idx], ...payload, updatedAt: now };
     return store.drivers[idx];
   }
   return null;

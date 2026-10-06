@@ -10,13 +10,18 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Phone,
   MessageCircle,
 } from "lucide-react";
 import { Driver, ServiceArea } from "@/db/schema";
 import { useAppAlert } from "@/components/ui/app-alert";
 
 type DriverWithArea = Driver & { area?: ServiceArea | null };
+
+function whatsappNumber(value: string | null | undefined) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  return digits.startsWith("8") ? `62${digits}` : digits;
+}
 
 export default function AdminDriversPage() {
   const { ask } = useAppAlert();
@@ -30,7 +35,6 @@ export default function AdminDriversPage() {
   const [formData, setFormData] = useState({
     areaId: "",
     name: "",
-    phone: "",
     whatsapp: "",
     vehicleType: "Honda Vario 160",
     vehiclePlate: "T 1234 XX",
@@ -55,7 +59,8 @@ export default function AdminDriversPage() {
   }
 
   useEffect(() => {
-    loadDrivers();
+    const timer = window.setTimeout(() => { void loadDrivers(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function handleOpenAdd() {
@@ -63,7 +68,6 @@ export default function AdminDriversPage() {
     setFormData({
       areaId: areas.find((area) => area.isActive)?.id || areas[0]?.id || "",
       name: "",
-      phone: "",
       whatsapp: "",
       vehicleType: "Honda Beat",
       vehiclePlate: "T ",
@@ -79,8 +83,7 @@ export default function AdminDriversPage() {
     setFormData({
       areaId: d.areaId || "",
       name: d.name,
-      phone: d.phone,
-      whatsapp: d.whatsapp || "",
+      whatsapp: d.whatsapp || d.phone,
       vehicleType: d.vehicleType || "",
       vehiclePlate: d.vehiclePlate || "",
       commissionPercent: d.commissionPercent,
@@ -94,17 +97,18 @@ export default function AdminDriversPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload = { ...formData, phone: formData.whatsapp };
       if (editingId) {
         await fetch("/api/sharelok/drivers", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, ...formData }),
+          body: JSON.stringify({ id: editingId, ...payload }),
         });
       } else {
         await fetch("/api/sharelok/drivers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
       }
       setIsModalOpen(false);
@@ -206,18 +210,16 @@ export default function AdminDriversPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 space-y-1">
-                      {d.whatsapp && (
+                      {(d.whatsapp || d.phone) && (
                         <a
-                          href={`https://wa.me/${d.whatsapp}`}
+                          href={`https://wa.me/${whatsappNumber(d.whatsapp || d.phone)}`}
                           target="_blank"
+                          rel="noreferrer"
                           className="flex items-center gap-1 text-[11px] text-emerald-700 font-medium hover:underline"
                         >
-                          <MessageCircle className="h-3 w-3" /> {d.whatsapp}
+                          <MessageCircle className="h-3 w-3" /> {d.whatsapp || d.phone}
                         </a>
                       )}
-                      <div className="flex items-center gap-1 text-[11px] text-zinc-500">
-                        <Phone className="h-3 w-3" /> {d.phone}
-                      </div>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="font-semibold text-zinc-800">{d.vehicleType || "Motor"}</div>
@@ -304,32 +306,20 @@ export default function AdminDriversPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-zinc-700 mb-1">
-                    No. Telepon *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="08123456789"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-zinc-700 mb-1">
-                    No. WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="628123456789"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-zinc-700 mb-1">
+                  Nomor WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  placeholder="08123456789 atau 628123456789"
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-zinc-400">Digunakan admin untuk menghubungi driver melalui WhatsApp.</p>
               </div>
 
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
