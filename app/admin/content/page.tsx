@@ -79,8 +79,8 @@ export default function PortalContentAdminPage() {
     <div className="flex gap-2 overflow-x-auto pb-1">{(["ALL", "HERO", "BLOG", "DESTINATION", "SHOP", "SOCIAL"] as const).map((type) => <button key={type} onClick={() => setFilter(type)} className={`whitespace-nowrap rounded-full px-3 py-2 text-xs font-bold ${filter === type ? "bg-zinc-900 text-white" : "border border-zinc-200 bg-white text-zinc-600"}`}>{type === "ALL" ? "Semua" : typeLabels[type]}</button>)}</div>
     {message && !isOpen && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
 
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      {loading ? <div className="p-12 text-center text-sm text-zinc-500">Memuat konten...</div> : visibleEntries.length === 0 ? <div className="p-12 text-center"><p className="text-sm font-bold text-zinc-700">Belum ada konten pada bagian ini.</p><button onClick={() => openAdd()} className="mt-3 text-sm font-bold text-emerald-700">+ Tambahkan sekarang</button></div> : <div className="divide-y divide-zinc-100">{visibleEntries.map((entry) => <div key={entry.id} className="flex items-start gap-3 p-4 hover:bg-zinc-50/60 sm:gap-4">
+    <div className="max-w-full overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm [overscroll-behavior-inline:contain]">
+      {loading ? <div className="p-12 text-center text-sm text-zinc-500">Memuat konten...</div> : visibleEntries.length === 0 ? <div className="p-12 text-center"><p className="text-sm font-bold text-zinc-700">Belum ada konten pada bagian ini.</p><button onClick={() => openAdd()} className="mt-3 text-sm font-bold text-emerald-700">+ Tambahkan sekarang</button></div> : <div className="min-w-[720px] divide-y divide-zinc-100">{visibleEntries.map((entry) => <div key={entry.id} className="flex items-start gap-4 p-4 hover:bg-zinc-50/60">
         <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-100" style={{ width: 80, height: 56 }}>
           {entry.imageUrl && <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
