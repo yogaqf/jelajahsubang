@@ -295,10 +295,11 @@ export default function AdminProductsPage() {
                             width={40}
                             height={40}
                             unoptimized
-                            className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
+                            className="h-10 w-10 shrink-0 rounded-xl border border-zinc-200 object-cover object-center"
+                            style={{ width: 40, height: 40 }}
                           />
                         ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold" style={{ width: 40, height: 40 }}>
                             <UtensilsCrossed className="h-5 w-5" />
                           </div>
                         )}

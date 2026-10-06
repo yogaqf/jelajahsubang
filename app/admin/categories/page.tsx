@@ -47,7 +47,8 @@ export default function AdminCategoriesPage() {
   }
 
   useEffect(() => {
-    loadCategories();
+    const timer = window.setTimeout(() => { void loadCategories(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function handleOpenAdd() {
@@ -184,17 +185,14 @@ export default function AdminCategoriesPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        {cat.imageUrl ? (
-                          <img
-                            src={cat.imageUrl}
-                            alt={cat.name}
-                            className="h-8 w-8 rounded-lg object-cover border border-zinc-200"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 font-bold">
-                            {cat.name.charAt(0)}
-                          </div>
-                        )}
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-emerald-50" style={{ width: 40, height: 40 }}>
+                          {cat.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={cat.imageUrl} alt={cat.name} className="absolute inset-0 h-full w-full object-cover object-center" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center font-bold text-emerald-700">{cat.name.charAt(0)}</div>
+                          )}
+                        </div>
                         <span className="font-bold text-zinc-900">{cat.name}</span>
                       </div>
                     </td>

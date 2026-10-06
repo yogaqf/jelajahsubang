@@ -211,17 +211,14 @@ export default function AdminMerchantsPage() {
                   <tr key={m.id} className="hover:bg-zinc-50 transition">
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        {m.imageUrl ? (
-                          <img
-                            src={m.imageUrl}
-                            alt={m.name}
-                            className="h-10 w-10 rounded-xl object-cover border border-zinc-200"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 font-bold">
-                            <Store className="h-5 w-5" />
-                          </div>
-                        )}
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-amber-50" style={{ width: 40, height: 40 }}>
+                          {m.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.imageUrl} alt={m.name} className="absolute inset-0 h-full w-full object-cover object-center" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-amber-700"><Store className="h-5 w-5" /></div>
+                          )}
+                        </div>
                         <div>
                           <div className="font-bold text-zinc-900">{m.name}</div>
                           <div className="font-mono text-[11px] text-zinc-400">{m.slug}</div>

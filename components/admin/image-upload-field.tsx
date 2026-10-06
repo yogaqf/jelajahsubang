@@ -101,7 +101,7 @@ export function ImageUploadField({
 
       {value ? (
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
-          <div className="relative aspect-[16/7] min-h-32 w-full overflow-hidden bg-zinc-100">
+          <div className="relative h-44 w-full overflow-hidden bg-zinc-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt={`Preview ${label.toLowerCase()}`} className="h-full w-full object-cover" />
           </div>
@@ -130,7 +130,7 @@ export function ImageUploadField({
           type="button"
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
-          className="flex min-h-32 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50/50 disabled:opacity-50"
+          className="flex h-44 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50/50 disabled:opacity-50"
         >
           {uploading ? <Loader2 className="h-7 w-7 animate-spin text-emerald-600" /> : <ImagePlus className="h-7 w-7 text-emerald-600" />}
           <span className="mt-2 text-xs font-bold text-zinc-700">{uploading ? "Sedang mengunggah..." : "Pilih foto dari perangkat"}</span>
