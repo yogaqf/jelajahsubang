@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { MapPinned } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -22,7 +23,10 @@ export default async function DestinasiPage() {
     return groups;
   }, {});
   return <div className="min-h-screen bg-[#f7f8f4]"><Navbar /><main>
-    <section className="bg-emerald-950 px-4 pb-20 pt-16 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Rencanakan perjalanan</p><h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Temukan sisi terbaik Kabupaten Subang.</h1><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/70">Dari udara pegunungan hingga pesisir utara, pilih tujuan yang cocok untuk perjalananmu.</p></div></section>
+    <section className="relative overflow-hidden bg-white px-4 pb-20 pt-16 text-zinc-950 sm:px-6 sm:pb-24 sm:pt-20">
+      <Image src="/images/IMG_9714.PNG" alt="" fill sizes="100vw" quality={75} preload className="object-cover object-[72%_center]" />
+      <div className="relative mx-auto max-w-7xl"><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">Wilujeng Sumping</p><h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Jelajahi Destinasi Menarik lainnya di Subang.</h1><p className="mt-5 max-w-2xl text-base leading-7 text-zinc-700">Dari udara pegunungan hingga pesisir utara, pilih tujuan yang cocok untuk perjalananmu.</p></div>
+    </section>
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Jelajah per wilayah</p><h2 className="mt-2 text-3xl font-black text-zinc-900">Destinasi berdasarkan kecamatan</h2><p className="mt-2 text-sm text-zinc-500">Pilih kecamatan untuk menemukan tempat menarik di kawasan yang sama.</p></div>
       {managed.length > 0 ? <div className="mt-12 space-y-14">{Object.entries(destinationsByDistrict).map(([district, destinations]) => <section key={district}>
