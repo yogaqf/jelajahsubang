@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BadgePercent, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 /* eslint-disable react-hooks/purity -- promo expiry reflects the current clock at render time. */
 
@@ -54,6 +55,7 @@ function MoneyInput({ value, onChange, required }: { value: number; onChange: (v
 }
 
 export default function PromosAdminPage() {
+  const { ask } = useAppAlert();
   const [promos, setPromos] = useState<Promo[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export default function PromosAdminPage() {
   }
 
   async function remove(item: Promo) {
-    if (!window.confirm(`Hapus promo ${item.code}?`)) return;
+    if (!await ask(`Kode promo “${item.code}” tidak dapat digunakan lagi setelah dihapus.`, { title: "Hapus kode promo?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     const response = await fetch(`/api/sharelok/promos?id=${item.id}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok) return setMessage(data.error || "Gagal menghapus promo");

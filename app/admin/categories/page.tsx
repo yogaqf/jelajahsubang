@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import { Category } from "@/db/schema";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 export default function AdminCategoriesPage() {
+  const { ask } = useAppAlert();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -101,7 +103,7 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Yakin ingin menghapus kategori ini?")) return;
+    if (!await ask("Kategori ini akan dihapus permanen.", { title: "Hapus kategori?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     try {
       await fetch(`/api/sharelok/categories?id=${id}`, { method: "DELETE" });
       await loadCategories();

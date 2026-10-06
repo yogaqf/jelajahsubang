@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Product, Merchant, Category } from "@/db/schema";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 interface ProductWithRelations extends Product {
   merchant?: Merchant | null;
@@ -36,6 +37,7 @@ const homepageBadgeColors = [
 ];
 
 export default function AdminProductsPage() {
+  const { ask, notify } = useAppAlert();
   const [products, setProducts] = useState<ProductWithRelations[]>([]);
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -148,7 +150,7 @@ export default function AdminProductsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.merchantId) {
-      alert("Pilih merchant terlebih dahulu");
+      await notify("Pilih merchant terlebih dahulu sebelum menyimpan menu.", { title: "Merchant belum dipilih", tone: "warning" });
       return;
     }
 
@@ -173,14 +175,14 @@ export default function AdminProductsPage() {
       setIsModalOpen(false);
       await loadData();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal menyimpan menu");
+      await notify(e instanceof Error ? e.message : "Gagal menyimpan menu", { title: "Menu belum tersimpan", tone: "danger", confirmLabel: "Coba lagi" });
     } finally {
       setIsSubmitting(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Yakin ingin menghapus produk ini?")) return;
+    if (!await ask("Menu ini akan dihapus permanen dari daftar produk.", { title: "Hapus menu?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     try {
       await fetch(`/api/sharelok/products?id=${id}`, { method: "DELETE" });
       await loadData();

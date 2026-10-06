@@ -20,6 +20,7 @@ import {
   PanelsTopLeft,
   LogOut,
 } from "lucide-react";
+import { AppAlertProvider } from "@/components/ui/app-alert";
 
 const navLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -52,7 +53,7 @@ export default function SharelokAdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-100 text-zinc-900">
+    <AppAlertProvider><div className="flex min-h-screen bg-zinc-100 text-zinc-900">
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -170,6 +171,6 @@ export default function SharelokAdminLayout({
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
-    </div>
+    </div></AppAlertProvider>
   );
 }

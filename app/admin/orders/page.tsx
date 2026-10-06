@@ -18,6 +18,7 @@ import {
   Plus,
   Minus,
 } from "lucide-react";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 interface Order {
   id: string;
@@ -255,6 +256,7 @@ function WhatsAppIcon({ className = "" }: { className?: string }) {
 }
 
 export default function AdminOrdersPage() {
+  const { notify } = useAppAlert();
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -494,7 +496,7 @@ export default function AdminOrdersPage() {
     if (!Number.isFinite(deliveryFee) || deliveryFee <= 0) {
       const message = "Ongkir wajib diisi dan harus lebih dari Rp0 sebelum lanjut ke customer.";
       setActionError(message);
-      window.alert(message);
+      await notify(message, { title: "Ongkir belum valid", tone: "warning" });
       return;
     }
     const total = order.subtotal + deliveryFee - order.discount;
@@ -512,7 +514,7 @@ export default function AdminOrdersPage() {
     if (!pricingForm.paymentMethod) {
       const message = "Pilih metode pembayaran yang benar-benar digunakan customer sebelum verifikasi.";
       setActionError(message);
-      window.alert(message);
+      await notify(message, { title: "Metode pembayaran belum dipilih", tone: "warning" });
       return;
     }
     setIsSubmitting(true);
@@ -559,7 +561,7 @@ export default function AdminOrdersPage() {
       if (!Number.isFinite(deliveryFee) || deliveryFee <= 0) {
         const message = "Ongkir wajib diisi dan harus lebih dari Rp0 sebelum menekan Next.";
         setActionError(message);
-        window.alert(message);
+        await notify(message, { title: "Ongkir belum valid", tone: "warning" });
         return;
       }
       return handleSendInvoice(order);

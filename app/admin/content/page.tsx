@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeCheck, ExternalLink, Eye, EyeOff, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 type ContentType = "HERO" | "BLOG" | "DESTINATION" | "SHOP" | "SOCIAL";
 interface PortalEntry {
@@ -22,6 +23,7 @@ const contentImageFolders: Record<ContentType, string> = {
 };
 
 export default function PortalContentAdminPage() {
+  const { ask } = useAppAlert();
   const [entries, setEntries] = useState<PortalEntry[]>([]);
   const [filter, setFilter] = useState<ContentType | "ALL">("ALL");
   const [form, setForm] = useState(emptyForm);
@@ -61,7 +63,7 @@ export default function PortalContentAdminPage() {
   }
 
   async function remove(entry: PortalEntry) {
-    if (!window.confirm(`Hapus “${entry.title}”?`)) return;
+    if (!await ask(`Konten “${entry.title}” akan dihapus permanen dari CMS.`, { title: "Hapus konten?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     const response = await fetch(`/api/portal/entries?id=${entry.id}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok) return setMessage(data.error || "Gagal menghapus konten");

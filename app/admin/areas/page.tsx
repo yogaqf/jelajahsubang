@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, MapPinned, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 interface Area { id: string; name: string; slug: string; description: string | null; isActive: boolean; sortOrder: number }
 const emptyForm = { name: "", slug: "", description: "", isActive: false, sortOrder: 0 };
 
 export default function AreasAdminPage() {
+  const { ask } = useAppAlert();
   const [areas, setAreas] = useState<Area[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function AreasAdminPage() {
   }
 
   async function remove(area: Area) {
-    if (!window.confirm(`Hapus area ${area.name}?`)) return;
+    if (!await ask(`Area “${area.name}” akan dihapus permanen.`, { title: "Hapus area layanan?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     const response = await fetch(`/api/sharelok/areas?id=${area.id}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok) return setMessage(data.error || "Gagal menghapus area");

@@ -14,10 +14,12 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Driver, ServiceArea } from "@/db/schema";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 type DriverWithArea = Driver & { area?: ServiceArea | null };
 
 export default function AdminDriversPage() {
+  const { ask } = useAppAlert();
   const [drivers, setDrivers] = useState<DriverWithArea[]>([]);
   const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +117,7 @@ export default function AdminDriversPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Yakin ingin menghapus driver ini?")) return;
+    if (!await ask("Data driver ini akan dihapus permanen.", { title: "Hapus driver?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     try {
       await fetch(`/api/sharelok/drivers?id=${id}`, { method: "DELETE" });
       await loadDrivers();

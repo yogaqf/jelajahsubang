@@ -16,10 +16,12 @@ import {
 } from "lucide-react";
 import { Merchant, ServiceArea } from "@/db/schema";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { useAppAlert } from "@/components/ui/app-alert";
 
 type MerchantWithArea = Merchant & { area?: ServiceArea | null };
 
 export default function AdminMerchantsPage() {
+  const { ask } = useAppAlert();
   const [merchants, setMerchants] = useState<MerchantWithArea[]>([]);
   const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,7 +128,7 @@ export default function AdminMerchantsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Yakin ingin menghapus merchant ini?")) return;
+    if (!await ask("Mitra beserta relasi datanya akan dihapus permanen.", { title: "Hapus mitra?", tone: "danger", confirmLabel: "Ya, hapus" })) return;
     try {
       await fetch(`/api/sharelok/merchants?id=${id}`, { method: "DELETE" });
       await loadMerchants();
