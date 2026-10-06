@@ -52,7 +52,6 @@ export function ShopCatalog({ products }: { products: ShopProductView[] }) {
             <p className="my-2 text-sm font-black text-emerald-700 sm:text-lg">{money(product.price)}</p>
             <div className="mt-auto space-y-2">
               {quantity > 0 ? <div className="flex h-10 items-center justify-between rounded-xl bg-emerald-50 px-2 text-emerald-800"><button type="button" onClick={() => changeQuantity(product.id, -1)} aria-label={`Kurangi ${product.title}`} className="flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-sm"><Minus className="h-3.5 w-3.5" /></button><strong className="text-xs">{quantity}</strong><button type="button" onClick={() => changeQuantity(product.id, 1)} aria-label={`Tambah ${product.title}`} className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white"><Plus className="h-3.5 w-3.5" /></button></div> : <button type="button" onClick={() => changeQuantity(product.id, 1)} className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-2 text-[11px] font-black text-white transition hover:bg-emerald-700 sm:text-sm"><ShoppingCart className="h-3.5 w-3.5" />Tambah</button>}
-              
             </div>
           </div>
         </article>;
